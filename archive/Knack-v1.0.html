@@ -1,0 +1,970 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>Knack · v1.0</title>
+<style>
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;font-family:-apple-system,"PingFang SC","Helvetica Neue",sans-serif;color:#1a1a1a;background:#f4f4ef;overflow:hidden}
+  button,input,textarea,select{font-family:inherit}
+
+  /* 顶栏 */
+  .topbar{height:48px;display:flex;align-items:center;gap:8px;padding:0 16px;background:#fff;border-bottom:1px solid #e5e5e0;flex-shrink:0;z-index:5}
+  .topbar .brand{font-weight:600;font-size:14px;letter-spacing:-0.005em;margin-right:12px}
+  .topbar .brand small{color:#888;font-weight:400;margin-left:6px}
+  .btn{font-size:12px;padding:6px 11px;border-radius:6px;border:1px solid #e5e5e0;background:#fafaf7;color:#333;cursor:pointer;transition:all .12s;white-space:nowrap}
+  .btn:hover{background:#ebebe5}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+  .btn.primary{background:#1a1a1a;color:#fff;border-color:#1a1a1a}
+  .btn.primary:hover{background:#333}
+  .btn.danger{color:#a94442}
+  .topbar .spacer{flex:1}
+  .topbar .status{font-size:12px;color:#888;margin-right:8px}
+
+  /* 主体 */
+  .layout{display:flex;height:calc(100% - 48px);min-height:0}
+  .stage{flex:1;position:relative;background:#fff;border-right:1px solid #e5e5e0;min-width:0;overflow:hidden}
+  .preview-frame{width:100%;height:100%;border:0;background:#fff}
+  .stage-overlay{position:absolute;inset:0;pointer-events:none;z-index:2}
+
+  /* 空态 */
+  .empty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px;color:#888;background:#fafaf7;text-align:center;padding:24px}
+  .empty h2{margin:0;font-size:18px;color:#444}
+  .empty p{margin:0;font-size:13px;line-height:1.6;max-width:520px}
+  .empty .drop-hint{padding:24px 36px;border:2px dashed #d4d4cc;border-radius:10px;background:#fff}
+  .empty.dragover .drop-hint{border-color:#1a1a1a;background:#f0f0e8}
+  .empty .actions{display:flex;gap:8px}
+
+  /* 侧栏 */
+  .side{width:380px;flex-shrink:0;background:#fafaf7;display:flex;flex-direction:column;overflow:hidden}
+  .panel{padding:14px 16px;border-bottom:1px solid #e5e5e0}
+  .panel h4{margin:0 0 8px;font-size:11px;letter-spacing:0.06em;text-transform:uppercase;color:#888;font-weight:600}
+
+  /* 选中信息 */
+  .sel-summary{font-size:13px;color:#333;margin-bottom:8px;min-height:1.5em}
+  .sel-empty{color:#999;font-style:italic}
+  .crumb{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px}
+  .crumb-item{font-family:"SF Mono",Menlo,monospace;font-size:11px;background:#fff;border:1px solid #e5e5e0;padding:2px 7px;border-radius:4px;cursor:pointer;color:#444}
+  .crumb-item:hover{background:#ebebe5}
+  .crumb-item.current{background:#1a1a1a;color:#fff;border-color:#1a1a1a}
+  .sel-tip{font-size:11px;color:#888;line-height:1.5}
+
+  /* 输入区 */
+  .prompt-area{flex:1;display:flex;flex-direction:column;padding:14px 16px;min-height:0}
+  .prompt-area h4{margin:0 0 8px}
+  .prompt-input{width:100%;flex:1;min-height:90px;padding:10px 12px;border:1px solid #e5e5e0;border-radius:8px;font-size:13px;line-height:1.5;resize:none;background:#fff;color:#1a1a1a;outline:none;transition:border-color .15s}
+  .prompt-input:focus{border-color:#1a1a1a}
+  .prompt-input:disabled{background:#f7f7f3;color:#999}
+  .prompt-actions{display:flex;gap:8px;margin-top:10px;align-items:center}
+  .prompt-hint{font-size:11px;color:#999;flex:1}
+  .prompt-tags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+  .prompt-tag{font-size:11px;padding:3px 8px;background:#fff;border:1px solid #e5e5e0;border-radius:99px;cursor:pointer;color:#555}
+  .prompt-tag:hover{background:#1a1a1a;color:#fff;border-color:#1a1a1a}
+
+  /* 历史 */
+  .history{max-height:180px;overflow-y:auto}
+  .history-item{padding:8px 10px;background:#fff;border:1px solid #e5e5e0;border-radius:6px;margin-bottom:6px;font-size:12px;cursor:pointer;display:flex;justify-content:space-between;gap:8px;align-items:center}
+  .history-item:hover{background:#f0f0e8}
+  .history-item.current{border-color:#1a1a1a;background:#fff}
+  .history-item .h-text{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#333}
+  .history-item .h-time{color:#aaa;font-size:10px;flex-shrink:0}
+  .history-empty{color:#999;font-size:12px;font-style:italic}
+
+  /* 模态 */
+  .modal-mask{position:fixed;inset:0;background:rgba(0,0,0,.4);display:none;align-items:center;justify-content:center;z-index:50}
+  .modal-mask.show{display:flex}
+  .modal{background:#fff;border-radius:12px;padding:24px 28px;width:480px;max-width:92vw;box-shadow:0 12px 40px rgba(0,0,0,.18)}
+  .modal h3{margin:0 0 6px;font-size:16px}
+  .modal .desc{font-size:12px;color:#888;margin-bottom:18px;line-height:1.6}
+  .field{margin-bottom:14px}
+  .field label{display:block;font-size:12px;color:#555;margin-bottom:5px;font-weight:500}
+  .field input,.field select,.field textarea{width:100%;padding:7px 10px;border:1px solid #e5e5e0;border-radius:6px;font-size:13px;outline:none;background:#fafaf7;font-family:inherit}
+  .field input:focus,.field textarea:focus{border-color:#1a1a1a;background:#fff}
+  .field .field-hint{font-size:11px;color:#aaa;margin-top:4px}
+  .modal-foot{display:flex;justify-content:flex-end;gap:8px;margin-top:18px}
+
+  /* Toast */
+  .toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%);background:#1a1a1a;color:#fff;padding:9px 18px;border-radius:99px;font-size:13px;opacity:0;transition:opacity .25s;pointer-events:none;z-index:100}
+  .toast.show{opacity:1}
+  .toast.error{background:#a94442}
+  .toast.success{background:#2d6a4f}
+
+  /* loading */
+  .loading{position:absolute;inset:0;background:rgba(255,255,255,.7);display:flex;align-items:center;justify-content:center;z-index:10;flex-direction:column;gap:12px}
+  .spinner{width:32px;height:32px;border:3px solid #e5e5e0;border-top-color:#1a1a1a;border-radius:50%;animation:spin 1s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .loading-text{font-size:13px;color:#666}
+
+  /* 框选矩形（叠在 stage 上） */
+  .marquee{position:absolute;border:1.5px dashed #1a1a1a;background:rgba(26,26,26,0.06);pointer-events:none;display:none;z-index:3}
+
+  textarea{font-family:inherit}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">Knack <small>v1.0 · 点选 + 自然语言</small></div>
+  <button class="btn" id="btnOpen">📂 打开</button>
+  <button class="btn" id="btnPaste">📋 粘贴源码</button>
+  <button class="btn" id="btnExport">⬇ 导出</button>
+  <span style="width:1px;height:18px;background:#e5e5e0;margin:0 4px"></span>
+  <button class="btn" id="btnUndo" disabled>↶ 撤销</button>
+  <button class="btn" id="btnRedo" disabled>↷ 重做</button>
+  <div class="spacer"></div>
+  <span class="status" id="statusText"></span>
+  <button class="btn" id="btnSettings">⚙ 设置</button>
+</div>
+
+<div class="layout">
+  <div class="stage" id="stage">
+    <iframe class="preview-frame" id="preview"></iframe>
+    <div class="stage-overlay" id="overlay">
+      <div class="marquee" id="marquee"></div>
+    </div>
+    <div class="empty" id="empty">
+      <div class="drop-hint">
+        <h2>把汇报 HTML 拖到这里</h2>
+        <p>或者点上方「打开」选文件 / 「粘贴源码」直接贴。<br>所有改动只在你本地浏览器，不会上传到任何服务器（除你配置的 LLM API）。</p>
+        <div class="actions">
+          <button class="btn primary" id="btnOpenEmpty">📂 选择文件</button>
+          <button class="btn" id="btnPasteEmpty">📋 粘贴源码</button>
+          <button class="btn" id="btnSampleEmpty">✨ 试用样例</button>
+        </div>
+      </div>
+    </div>
+    <div class="loading" id="loading" style="display:none">
+      <div class="spinner"></div>
+      <div class="loading-text" id="loadingText">AI 改写中...</div>
+    </div>
+  </div>
+
+  <aside class="side">
+    <div class="panel">
+      <h4>当前选中</h4>
+      <div class="sel-summary" id="selSummary"><span class="sel-empty">点击预览中的元素来锚定，按住鼠标拖一个矩形可框选多个</span></div>
+      <div class="crumb" id="crumb"></div>
+      <div class="sel-tip" id="selTip"></div>
+    </div>
+
+    <div class="prompt-area">
+      <h4>用自然语言修改</h4>
+      <div class="prompt-tags" id="promptTags">
+        <span class="prompt-tag" data-t="改成方形（去掉圆角）">改成方形</span>
+        <span class="prompt-tag" data-t="改成圆形（圆角 50%）">改成圆形</span>
+        <span class="prompt-tag" data-t="字号放大到原来的 1.5 倍">字放大</span>
+        <span class="prompt-tag" data-t="加深一点阴影">加阴影</span>
+        <span class="prompt-tag" data-t="背景换成深蓝色，文字改为白色">深蓝底白字</span>
+        <span class="prompt-tag" data-t="移到右侧（如果当前在左列就放到右列）">挪到右边</span>
+        <span class="prompt-tag" data-t="删除这个元素">删除</span>
+      </div>
+      <textarea class="prompt-input" id="promptInput" placeholder="例：把这块改成方形 / 字号放大一倍 / 改成两栏 / 加副标题 XX..."></textarea>
+      <div class="prompt-actions">
+        <span class="prompt-hint">⌘+Enter 提交</span>
+        <button class="btn primary" id="btnApply">发送给 AI 改写</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h4>修改历史 <span style="color:#bbb;font-weight:400;text-transform:none;letter-spacing:normal">（点击回滚）</span></h4>
+      <div class="history" id="historyList"><div class="history-empty">暂无修改</div></div>
+    </div>
+  </aside>
+</div>
+
+<!-- 设置模态 -->
+<div class="modal-mask" id="settingsModal">
+  <div class="modal">
+    <h3>LLM 设置</h3>
+    <div class="desc">支持 OpenAI 兼容协议（公司内部网关、OpenAI、Claude 经 OpenRouter、DeepSeek、通义、豆包都可）。Key 与配置只保存在你本地浏览器 localStorage，不上传任何外部服务。</div>
+    <div class="field">
+      <label>Base URL</label>
+      <input type="text" id="cfgBase" placeholder="例：https://api.openai.com/v1 或公司内部网关地址">
+      <div class="field-hint">OpenAI 兼容的 Chat Completions 接口根地址，自动补 /chat/completions</div>
+    </div>
+    <div class="field">
+      <label>API Key</label>
+      <input type="password" id="cfgKey" placeholder="sk-... 或公司内部 token">
+    </div>
+    <div class="field">
+      <label>Model</label>
+      <input type="text" id="cfgModel" placeholder="例：gpt-4o / claude-3-5-sonnet / deepseek-chat / 公司内部模型名">
+    </div>
+    <div class="field">
+      <label>额外请求头（JSON，可选）</label>
+      <textarea id="cfgHeaders" rows="2" placeholder='{"X-Custom-Header":"value"}' style="font-family:&quot;SF Mono&quot;,Menlo,monospace;font-size:12px"></textarea>
+      <div class="field-hint">公司内部网关常需要额外的鉴权头，按需填</div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" id="btnTestConn">测试连接</button>
+      <button class="btn" id="btnCfgCancel">取消</button>
+      <button class="btn primary" id="btnCfgSave">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- 粘贴源码模态 -->
+<div class="modal-mask" id="pasteModal">
+  <div class="modal" style="width:640px">
+    <h3>粘贴 HTML 源码</h3>
+    <div class="desc">把完整的 HTML 内容粘贴到下面，点确定即可加载。</div>
+    <div class="field">
+      <textarea id="pasteArea" rows="14" placeholder="<!doctype html>..." style="font-family:&quot;SF Mono&quot;,Menlo,monospace;font-size:12px"></textarea>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" id="btnPasteCancel">取消</button>
+      <button class="btn primary" id="btnPasteOk">加载</button>
+    </div>
+  </div>
+</div>
+
+<input type="file" id="fileInput" accept=".html,.htm" style="display:none">
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================
+ * HTML 修改器 - 主逻辑
+ * 设计原则：
+ *  - 单文件，浏览器即用
+ *  - 主区用 iframe 隔离用户 HTML，防 CSS 污染编辑器 UI
+ *  - 选择基于 iframe 内 DOM；编辑也在 iframe 内 DOM；导出时序列化整个 iframe document
+ *  - 历史栈存全文 outerHTML 快照
+ * ============================================================ */
+
+const $ = sel => document.querySelector(sel);
+
+// ---------- Toast ----------
+const toastEl = $('#toast');
+let toastTimer = null;
+function toast(msg, type = '') {
+  toastEl.textContent = msg;
+  toastEl.className = 'toast show ' + type;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toastEl.className = 'toast', 2200);
+}
+
+// ---------- 配置 ----------
+const CFG_KEY = 'html_modifier_cfg_v1';
+function loadCfg() {
+  try { return JSON.parse(localStorage.getItem(CFG_KEY) || '{}'); }
+  catch { return {}; }
+}
+function saveCfg(c) { localStorage.setItem(CFG_KEY, JSON.stringify(c)); }
+function getCfg() {
+  return Object.assign({
+    base: '',
+    key: '',
+    model: '',
+    headers: ''
+  }, loadCfg());
+}
+
+// ---------- 状态 ----------
+const state = {
+  filename: 'untitled.html',
+  history: [],         // [{html, label, time}]
+  hIndex: -1,          // 当前在历史栈的位置
+  selected: [],        // [Element] inside iframe
+  hovered: null,
+  marquee: false
+};
+
+// ---------- iframe 注入辅助 ----------
+const previewEl = $('#preview');
+const overlayEl = $('#overlay');
+const stageEl = $('#stage');
+const emptyEl = $('#empty');
+const marqueeEl = $('#marquee');
+
+const HOVER_CLASS = '__html_modifier_hover__';
+const SEL_CLASS = '__html_modifier_sel__';
+const STYLE_ID = '__html_modifier_style__';
+
+const OVERLAY_STYLE = `
+  .${HOVER_CLASS}{outline:2px dashed #5b8def !important;outline-offset:-2px}
+  .${SEL_CLASS}{outline:2.5px solid #1a1a1a !important;outline-offset:-2px;box-shadow:0 0 0 4px rgba(26,26,26,0.08) !important}
+  *{cursor:crosshair !important}
+  a,button{pointer-events:none}
+`;
+
+function getDoc() {
+  return previewEl.contentDocument || previewEl.contentWindow?.document;
+}
+
+function injectOverlayStyles() {
+  const doc = getDoc();
+  if (!doc) return;
+  let style = doc.getElementById(STYLE_ID);
+  if (!style) {
+    style = doc.createElement('style');
+    style.id = STYLE_ID;
+    doc.head?.appendChild(style);
+  }
+  style.textContent = OVERLAY_STYLE;
+}
+
+function clearVisualMarks(doc) {
+  if (!doc) return;
+  doc.querySelectorAll('.' + HOVER_CLASS).forEach(el => el.classList.remove(HOVER_CLASS));
+  doc.querySelectorAll('.' + SEL_CLASS).forEach(el => el.classList.remove(SEL_CLASS));
+}
+
+function refreshVisualMarks() {
+  const doc = getDoc();
+  if (!doc) return;
+  clearVisualMarks(doc);
+  if (state.hovered && !state.selected.includes(state.hovered)) {
+    state.hovered.classList.add(HOVER_CLASS);
+  }
+  state.selected.forEach(el => el.classList.add(SEL_CLASS));
+}
+
+// ---------- 加载 HTML 到 iframe ----------
+function loadHtml(html, opts = {}) {
+  const { resetHistory = true, label = '初始版本' } = opts;
+  state.selected = [];
+  state.hovered = null;
+
+  // 用 srcdoc 触发完整加载
+  previewEl.srcdoc = html;
+  emptyEl.style.display = 'none';
+
+  previewEl.onload = () => {
+    injectOverlayStyles();
+    bindIframeEvents();
+    refreshVisualMarks();
+    updateSelectionPanel();
+  };
+
+  if (resetHistory) {
+    state.history = [{ html, label, time: now() }];
+    state.hIndex = 0;
+  }
+  updateUndoRedoButtons();
+  renderHistory();
+}
+
+function getCurrentHtml() {
+  const doc = getDoc();
+  if (!doc || !doc.documentElement) return '';
+  // 序列化前清掉视觉标记
+  clearVisualMarks(doc);
+  const styleNode = doc.getElementById(STYLE_ID);
+  if (styleNode) styleNode.remove();
+  const html = '<!doctype html>\n' + doc.documentElement.outerHTML;
+  // 重注，让用户继续编辑
+  injectOverlayStyles();
+  refreshVisualMarks();
+  return html;
+}
+
+// ---------- iframe 事件绑定 ----------
+function bindIframeEvents() {
+  const doc = getDoc();
+  if (!doc) return;
+
+  doc.addEventListener('mousemove', e => {
+    if (state.marquee) return;
+    const el = pickEditable(e.target);
+    if (state.hovered !== el) {
+      state.hovered = el;
+      refreshVisualMarks();
+    }
+  });
+
+  doc.addEventListener('mouseleave', () => {
+    state.hovered = null;
+    refreshVisualMarks();
+  });
+
+  // 单击锚定
+  doc.addEventListener('click', e => {
+    e.preventDefault();
+    e.stopPropagation();
+    const el = pickEditable(e.target);
+    if (!el) return;
+    if (e.shiftKey) {
+      const idx = state.selected.indexOf(el);
+      if (idx >= 0) state.selected.splice(idx, 1);
+      else state.selected.push(el);
+    } else {
+      state.selected = [el];
+    }
+    refreshVisualMarks();
+    updateSelectionPanel();
+  }, true);
+
+  // 框选：在 iframe 内按下 → 移动 → 抬起
+  let startX = 0, startY = 0;
+  doc.addEventListener('mousedown', e => {
+    if (e.button !== 0) return;
+    // 仅在没点中具体可编辑元素时启动框选 —— 这里改成: 任何位置按住拖动超过 5px 就转为框选
+    startX = e.clientX;
+    startY = e.clientY;
+    let started = false;
+
+    const onMove = ev => {
+      const dx = Math.abs(ev.clientX - startX);
+      const dy = Math.abs(ev.clientY - startY);
+      if (!started && (dx > 5 || dy > 5)) {
+        started = true;
+        state.marquee = true;
+        // 取消即将发生的 click
+      }
+      if (started) {
+        updateMarqueeRect(startX, startY, ev.clientX, ev.clientY);
+      }
+    };
+    const onUp = ev => {
+      doc.removeEventListener('mousemove', onMove, true);
+      doc.removeEventListener('mouseup', onUp, true);
+      if (started) {
+        const rect = computeRect(startX, startY, ev.clientX, ev.clientY);
+        const elements = elementsInRect(doc, rect);
+        if (elements.length > 0) {
+          state.selected = ev.shiftKey ? mergeSel(state.selected, elements) : elements;
+          refreshVisualMarks();
+          updateSelectionPanel();
+        }
+        marqueeEl.style.display = 'none';
+        // 阻止接下来的 click
+        const blockClick = e2 => { e2.stopPropagation(); e2.preventDefault(); doc.removeEventListener('click', blockClick, true); };
+        doc.addEventListener('click', blockClick, true);
+        setTimeout(() => state.marquee = false, 0);
+      }
+    };
+    doc.addEventListener('mousemove', onMove, true);
+    doc.addEventListener('mouseup', onUp, true);
+  }, true);
+
+  // ESC 取消选择
+  doc.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+      state.selected = [];
+      refreshVisualMarks();
+      updateSelectionPanel();
+    }
+  });
+}
+
+function pickEditable(target) {
+  // 不允许选中 html/body/head/style/script
+  if (!target || target.nodeType !== 1) return null;
+  const tag = (target.tagName || '').toLowerCase();
+  if (['html','body','head','style','script','meta','link','title'].includes(tag)) return null;
+  return target;
+}
+
+function mergeSel(a, b) {
+  const result = [...a];
+  for (const el of b) if (!result.includes(el)) result.push(el);
+  return result;
+}
+
+function updateMarqueeRect(x1, y1, x2, y2) {
+  // marqueeEl 在 overlay 里，坐标系 = stage 客户端坐标
+  const stageRect = stageEl.getBoundingClientRect();
+  const frameRect = previewEl.getBoundingClientRect();
+  // iframe 内坐标 → 转到 stage 内坐标
+  const offsetX = frameRect.left - stageRect.left;
+  const offsetY = frameRect.top - stageRect.top;
+  const r = computeRect(x1, y1, x2, y2);
+  marqueeEl.style.display = 'block';
+  marqueeEl.style.left = (r.left + offsetX) + 'px';
+  marqueeEl.style.top = (r.top + offsetY) + 'px';
+  marqueeEl.style.width = r.width + 'px';
+  marqueeEl.style.height = r.height + 'px';
+}
+
+function computeRect(x1, y1, x2, y2) {
+  const left = Math.min(x1, x2);
+  const top = Math.min(y1, y2);
+  return { left, top, right: Math.max(x1, x2), bottom: Math.max(y1, y2), width: Math.abs(x2 - x1), height: Math.abs(y2 - y1) };
+}
+
+function elementsInRect(doc, rect) {
+  // 选所有"主要可视块级元素"，过滤太小的、纯包裹的
+  const candidates = doc.querySelectorAll('div, section, article, header, footer, aside, nav, h1,h2,h3,h4,h5,h6, p, ul, ol, li, table, figure, blockquote, img, button');
+  const hits = [];
+  for (const el of candidates) {
+    const r = el.getBoundingClientRect();
+    if (r.width < 8 || r.height < 8) continue;
+    // 必须与框选矩形相交
+    if (r.right < rect.left || r.left > rect.right || r.bottom < rect.top || r.top > rect.bottom) continue;
+    hits.push(el);
+  }
+  // 移除已被祖先包含的子元素，留最高层
+  const filtered = hits.filter(el => !hits.some(other => other !== el && other.contains(el)));
+  return filtered;
+}
+
+// ---------- 选择面板更新 ----------
+function updateSelectionPanel() {
+  const summary = $('#selSummary');
+  const crumb = $('#crumb');
+  const tip = $('#selTip');
+
+  if (state.selected.length === 0) {
+    summary.innerHTML = '<span class="sel-empty">点击预览中的元素来锚定，按住鼠标拖一个矩形可框选多个</span>';
+    crumb.innerHTML = '';
+    tip.textContent = '';
+    return;
+  }
+
+  if (state.selected.length === 1) {
+    const el = state.selected[0];
+    summary.innerHTML = `已选中 <b>1 个元素</b>：${describeEl(el)}`;
+    crumb.innerHTML = renderCrumb(el);
+    bindCrumb();
+    tip.textContent = '点上方路径可扩大选择到祖先元素 · Shift+点击可加减元素 · 拖矩形可框选';
+  } else {
+    summary.innerHTML = `已选中 <b>${state.selected.length} 个元素</b>：` +
+      state.selected.slice(0, 3).map(describeEl).join('，') +
+      (state.selected.length > 3 ? ` 等 ${state.selected.length} 个` : '');
+    crumb.innerHTML = '';
+    tip.textContent = 'AI 会一次性对这些元素整体改写 · ESC 清空选择';
+  }
+}
+
+function describeEl(el) {
+  const tag = el.tagName.toLowerCase();
+  let id = el.id ? `#${el.id}` : '';
+  let cls = el.className && typeof el.className === 'string' ? '.' + el.className.trim().split(/\s+/).slice(0, 2).join('.') : '';
+  if (cls === '.') cls = '';
+  return `<code style="background:#fff;padding:1px 5px;border-radius:3px;font-size:11px">${tag}${id}${cls}</code>`;
+}
+
+function renderCrumb(el) {
+  const path = [];
+  let cur = el;
+  while (cur && cur.tagName && cur.tagName.toLowerCase() !== 'html') {
+    path.unshift(cur);
+    cur = cur.parentElement;
+  }
+  return path.map((p, i) => {
+    const isCurrent = (p === el);
+    const tag = p.tagName.toLowerCase();
+    let id = p.id ? '#' + p.id : '';
+    let cls = '';
+    if (p.className && typeof p.className === 'string') {
+      const c = p.className.trim().split(/\s+/).filter(x => !x.startsWith('__html_modifier'));
+      if (c.length) cls = '.' + c.slice(0, 1).join('.');
+    }
+    return `<span class="crumb-item ${isCurrent ? 'current' : ''}" data-i="${i}">${tag}${id}${cls}</span>`;
+  }).join('');
+}
+
+function bindCrumb() {
+  document.querySelectorAll('.crumb-item').forEach(item => {
+    item.addEventListener('click', () => {
+      if (state.selected.length !== 1) return;
+      const el = state.selected[0];
+      const path = [];
+      let cur = el;
+      while (cur && cur.tagName.toLowerCase() !== 'html') { path.unshift(cur); cur = cur.parentElement; }
+      const idx = parseInt(item.dataset.i, 10);
+      state.selected = [path[idx]];
+      refreshVisualMarks();
+      updateSelectionPanel();
+    });
+  });
+}
+
+// ---------- 历史 ----------
+function pushHistory(label) {
+  const html = getCurrentHtml();
+  // 截断
+  state.history = state.history.slice(0, state.hIndex + 1);
+  state.history.push({ html, label, time: now() });
+  if (state.history.length > 50) {
+    state.history.shift();
+  } else {
+    state.hIndex++;
+  }
+  updateUndoRedoButtons();
+  renderHistory();
+}
+
+function gotoHistory(index) {
+  if (index < 0 || index >= state.history.length) return;
+  state.hIndex = index;
+  loadHtml(state.history[index].html, { resetHistory: false });
+  updateUndoRedoButtons();
+  renderHistory();
+}
+
+function undo() { if (state.hIndex > 0) gotoHistory(state.hIndex - 1); }
+function redo() { if (state.hIndex < state.history.length - 1) gotoHistory(state.hIndex + 1); }
+
+function updateUndoRedoButtons() {
+  $('#btnUndo').disabled = state.hIndex <= 0;
+  $('#btnRedo').disabled = state.hIndex >= state.history.length - 1;
+}
+
+function renderHistory() {
+  const list = $('#historyList');
+  if (!state.history.length) {
+    list.innerHTML = '<div class="history-empty">暂无修改</div>';
+    return;
+  }
+  list.innerHTML = state.history.map((h, i) => `
+    <div class="history-item ${i === state.hIndex ? 'current' : ''}" data-i="${i}">
+      <span class="h-text">${i === 0 ? '📄 ' : '✏️ '}${escapeHtml(h.label)}</span>
+      <span class="h-time">${formatTime(h.time)}</span>
+    </div>
+  `).join('');
+  list.querySelectorAll('.history-item').forEach(item => {
+    item.addEventListener('click', () => gotoHistory(parseInt(item.dataset.i, 10)));
+  });
+}
+
+function now() { return Date.now(); }
+function formatTime(t) {
+  const d = new Date(t);
+  return d.getHours().toString().padStart(2, '0') + ':' + d.getMinutes().toString().padStart(2, '0') + ':' + d.getSeconds().toString().padStart(2, '0');
+}
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+// ---------- AI 调用 ----------
+async function callLLM(messages, signal) {
+  const cfg = getCfg();
+  if (!cfg.base || !cfg.key || !cfg.model) {
+    throw new Error('请先在「设置」里填 Base URL、API Key、Model');
+  }
+  let base = cfg.base.trim().replace(/\/+$/, '');
+  // 如果 base 不以 /chat/completions 结尾，自动补
+  const url = base.endsWith('/chat/completions') ? base : base + '/chat/completions';
+
+  const headers = {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${cfg.key}`
+  };
+  if (cfg.headers) {
+    try {
+      const extra = JSON.parse(cfg.headers);
+      Object.assign(headers, extra);
+    } catch {}
+  }
+
+  const resp = await fetch(url, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({
+      model: cfg.model,
+      messages,
+      temperature: 0.2,
+      stream: false
+    }),
+    signal
+  });
+  if (!resp.ok) {
+    const text = await resp.text().catch(() => '');
+    throw new Error(`API 返回 ${resp.status}：${text.slice(0, 200)}`);
+  }
+  const data = await resp.json();
+  const content = data?.choices?.[0]?.message?.content;
+  if (!content) throw new Error('API 返回数据格式异常：' + JSON.stringify(data).slice(0, 200));
+  return content;
+}
+
+// ---------- 应用修改 ----------
+async function applyAIRewrite() {
+  if (state.selected.length === 0) {
+    toast('请先在预览区点选要改的元素', 'error');
+    return;
+  }
+  const prompt = $('#promptInput').value.trim();
+  if (!prompt) {
+    toast('请输入修改指令', 'error');
+    return;
+  }
+
+  // 构造 payload
+  const elements = state.selected.map((el, i) => ({
+    id: i,
+    html: el.outerHTML,
+    tag: el.tagName.toLowerCase()
+  }));
+
+  const sys = `You are an expert HTML/CSS editor. Rewrite the given HTML element(s) per user's instruction.
+
+RULES:
+1. Return ONLY a JSON array, no markdown fences, no commentary.
+2. JSON shape: [{"id": <int>, "html": "<new outerHTML>"}], one entry per input element, same id.
+3. Keep semantic structure unless instruction says otherwise.
+4. Inline styles or new <style> rules inside the element are OK; do NOT add external dependencies.
+5. If user wants deletion, return {"id": <int>, "html": ""} for that element.
+6. Preserve text content unless user explicitly asks to change it.
+7. Do not wrap output in code fences. Output raw JSON only.`;
+
+  const userMsg = `Instruction (Chinese, follow exactly): ${prompt}
+
+Selected element(s):
+${JSON.stringify(elements, null, 2)}
+
+Return JSON array now.`;
+
+  showLoading('AI 改写中...');
+  try {
+    const out = await callLLM([
+      { role: 'system', content: sys },
+      { role: 'user', content: userMsg }
+    ]);
+    const parsed = parseAIResult(out);
+    if (!Array.isArray(parsed)) throw new Error('AI 返回不是数组');
+
+    // 应用替换（按原顺序）
+    const doc = getDoc();
+    clearVisualMarks(doc);
+
+    const newSelected = [];
+    for (const item of parsed) {
+      const target = state.selected[item.id];
+      if (!target || !target.parentNode) continue;
+      if (item.html === '' || item.html == null) {
+        target.parentNode.removeChild(target);
+        continue;
+      }
+      const wrapper = doc.createElement('div');
+      wrapper.innerHTML = item.html.trim();
+      const newNode = wrapper.firstElementChild;
+      if (!newNode) continue;
+      target.parentNode.replaceChild(newNode, target);
+      newSelected.push(newNode);
+    }
+
+    state.selected = newSelected;
+    refreshVisualMarks();
+    updateSelectionPanel();
+    pushHistory(prompt.length > 30 ? prompt.slice(0, 30) + '…' : prompt);
+    toast('改写完成', 'success');
+    $('#promptInput').value = '';
+  } catch (e) {
+    toast('AI 改写失败：' + e.message, 'error');
+    console.error(e);
+  } finally {
+    hideLoading();
+  }
+}
+
+function parseAIResult(text) {
+  // 去掉可能的 markdown fence
+  let t = text.trim();
+  t = t.replace(/^```(?:json)?\s*/i, '').replace(/```$/, '').trim();
+  // 找第一个 [ 到最后一个 ]
+  const start = t.indexOf('[');
+  const end = t.lastIndexOf(']');
+  if (start >= 0 && end > start) t = t.slice(start, end + 1);
+  return JSON.parse(t);
+}
+
+function showLoading(txt) {
+  $('#loadingText').textContent = txt;
+  $('#loading').style.display = 'flex';
+}
+function hideLoading() {
+  $('#loading').style.display = 'none';
+}
+
+// ---------- 文件 IO ----------
+function readFile(file) {
+  state.filename = file.name || 'untitled.html';
+  const reader = new FileReader();
+  reader.onload = () => loadHtml(reader.result, { label: '初始版本' });
+  reader.onerror = () => toast('读取文件失败', 'error');
+  reader.readAsText(file);
+}
+
+function exportHtml() {
+  if (!state.history.length) { toast('还没有内容可导出', 'error'); return; }
+  const html = getCurrentHtml();
+  const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+  const a = document.createElement('a');
+  const base = state.filename.replace(/\.html?$/i, '');
+  a.href = URL.createObjectURL(blob);
+  a.download = `${base}-edited-${stamp()}.html`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+  toast('已导出 ' + a.download, 'success');
+}
+
+function stamp() {
+  const d = new Date();
+  const p = n => n.toString().padStart(2, '0');
+  return d.getFullYear() + p(d.getMonth() + 1) + p(d.getDate()) + '-' + p(d.getHours()) + p(d.getMinutes()) + p(d.getSeconds());
+}
+
+// ---------- 拖入支持 ----------
+function bindDrop() {
+  ['dragover','dragenter'].forEach(ev => stageEl.addEventListener(ev, e => {
+    e.preventDefault();
+    if (emptyEl.style.display !== 'none') emptyEl.classList.add('dragover');
+  }));
+  ['dragleave','drop'].forEach(ev => stageEl.addEventListener(ev, e => {
+    e.preventDefault();
+    emptyEl.classList.remove('dragover');
+  }));
+  stageEl.addEventListener('drop', e => {
+    const file = e.dataTransfer?.files?.[0];
+    if (file && /\.html?$/i.test(file.name)) readFile(file);
+    else toast('请拖入 .html 文件', 'error');
+  });
+}
+
+// ---------- 设置弹窗 ----------
+function openSettings() {
+  const c = getCfg();
+  $('#cfgBase').value = c.base || '';
+  $('#cfgKey').value = c.key || '';
+  $('#cfgModel').value = c.model || '';
+  $('#cfgHeaders').value = c.headers || '';
+  $('#settingsModal').classList.add('show');
+}
+function closeSettings() { $('#settingsModal').classList.remove('show'); }
+function saveSettings() {
+  const c = {
+    base: $('#cfgBase').value.trim(),
+    key: $('#cfgKey').value.trim(),
+    model: $('#cfgModel').value.trim(),
+    headers: $('#cfgHeaders').value.trim()
+  };
+  saveCfg(c);
+  toast('设置已保存', 'success');
+  closeSettings();
+  updateStatus();
+}
+async function testConn() {
+  try {
+    showLoading('测试连接中...');
+    const out = await callLLM([
+      { role: 'user', content: 'reply with the single word: ok' }
+    ]);
+    toast('连接 OK：' + out.slice(0, 40), 'success');
+  } catch (e) {
+    toast('连接失败：' + e.message, 'error');
+  } finally {
+    hideLoading();
+  }
+}
+
+function updateStatus() {
+  const c = getCfg();
+  if (!c.base || !c.key || !c.model) {
+    $('#statusText').textContent = '⚠ 未配置 LLM';
+  } else {
+    $('#statusText').textContent = `✓ ${c.model}`;
+  }
+}
+
+// ---------- 粘贴源码 ----------
+function openPaste() {
+  $('#pasteArea').value = '';
+  $('#pasteModal').classList.add('show');
+  setTimeout(() => $('#pasteArea').focus(), 100);
+}
+function closePaste() { $('#pasteModal').classList.remove('show'); }
+function applyPaste() {
+  const html = $('#pasteArea').value.trim();
+  if (!html) { toast('粘贴内容为空', 'error'); return; }
+  state.filename = 'pasted.html';
+  loadHtml(html, { label: '粘贴的内容' });
+  closePaste();
+}
+
+// ---------- 样例 ----------
+const SAMPLE = `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><title>样例汇报</title>
+<style>
+  body{margin:0;font-family:-apple-system,"PingFang SC",sans-serif;background:#fafaf7;color:#1a1a1a;line-height:1.6}
+  .hero{padding:80px 60px;background:linear-gradient(135deg,#1a3a5c,#2a5985);color:#fff}
+  .hero h1{margin:0;font-size:48px;letter-spacing:-0.02em}
+  .hero p{margin:12px 0 0;font-size:18px;opacity:0.85}
+  section{padding:60px;max-width:1100px;margin:0 auto}
+  h2{font-size:28px;margin:0 0 20px;letter-spacing:-0.01em}
+  .kpi{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin:24px 0}
+  .kpi-card{padding:24px;background:#fff;border:1px solid #e5e5e0;border-radius:8px}
+  .kpi-num{font-size:32px;font-weight:700;color:#1a3a5c}
+  .kpi-label{font-size:13px;color:#666;margin-top:4px}
+  .two-col{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:24px}
+  .col-card{padding:24px;background:#fff;border:1px solid #e5e5e0;border-radius:8px}
+  .col-card h3{margin:0 0 8px;font-size:18px}
+  .col-card p{margin:0;color:#555;font-size:14px}
+</style></head><body>
+<div class="hero"><h1>2026 上半年汇报</h1><p>增长、效率、组织 · 一次性给你全貌</p></div>
+<section>
+  <h2>关键指标</h2>
+  <div class="kpi">
+    <div class="kpi-card"><div class="kpi-num">+38%</div><div class="kpi-label">营收同比</div></div>
+    <div class="kpi-card"><div class="kpi-num">214</div><div class="kpi-label">新签客户</div></div>
+    <div class="kpi-card"><div class="kpi-num">92.4%</div><div class="kpi-label">续约率</div></div>
+    <div class="kpi-card"><div class="kpi-num">7.2</div><div class="kpi-label">NPS</div></div>
+  </div>
+  <h2 style="margin-top:48px">两个核心动作</h2>
+  <div class="two-col">
+    <div class="col-card"><h3>客户成功体系升级</h3><p>从被动响应到主动陪跑，建立客户健康度模型，季度复盘机制全面落地。</p></div>
+    <div class="col-card"><h3>组织效率改造</h3><p>重新梳理 8 条核心业务流程，消除 32 个冗余审批节点，平均交付周期缩短 41%。</p></div>
+  </div>
+</section>
+</body></html>`;
+
+function loadSample() {
+  state.filename = 'sample.html';
+  loadHtml(SAMPLE, { label: '样例初始版本' });
+}
+
+// ---------- 绑定 ----------
+document.addEventListener('DOMContentLoaded', () => {
+  bindDrop();
+  updateStatus();
+
+  $('#btnOpen').addEventListener('click', () => $('#fileInput').click());
+  $('#btnOpenEmpty').addEventListener('click', () => $('#fileInput').click());
+  $('#btnPaste').addEventListener('click', openPaste);
+  $('#btnPasteEmpty').addEventListener('click', openPaste);
+  $('#btnSampleEmpty').addEventListener('click', loadSample);
+  $('#btnExport').addEventListener('click', exportHtml);
+  $('#btnUndo').addEventListener('click', undo);
+  $('#btnRedo').addEventListener('click', redo);
+  $('#btnSettings').addEventListener('click', openSettings);
+  $('#btnCfgCancel').addEventListener('click', closeSettings);
+  $('#btnCfgSave').addEventListener('click', saveSettings);
+  $('#btnTestConn').addEventListener('click', testConn);
+  $('#btnPasteCancel').addEventListener('click', closePaste);
+  $('#btnPasteOk').addEventListener('click', applyPaste);
+  $('#btnApply').addEventListener('click', applyAIRewrite);
+
+  $('#fileInput').addEventListener('change', e => {
+    const f = e.target.files?.[0];
+    if (f) readFile(f);
+    e.target.value = '';
+  });
+
+  $('#promptInput').addEventListener('keydown', e => {
+    if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+      e.preventDefault();
+      applyAIRewrite();
+    }
+  });
+
+  document.querySelectorAll('.prompt-tag').forEach(t => {
+    t.addEventListener('click', () => {
+      $('#promptInput').value = t.dataset.t;
+      $('#promptInput').focus();
+    });
+  });
+
+  // 全局快捷键
+  document.addEventListener('keydown', e => {
+    if ((e.metaKey || e.ctrlKey) && e.key === 'z' && !e.shiftKey) { e.preventDefault(); undo(); }
+    else if ((e.metaKey || e.ctrlKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) { e.preventDefault(); redo(); }
+  });
+
+  // 关闭模态背景点击
+  document.querySelectorAll('.modal-mask').forEach(m => {
+    m.addEventListener('click', e => { if (e.target === m) m.classList.remove('show'); });
+  });
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,2127 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>Knack · v2.3</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0%25' stop-color='%23FF8A3D'/><stop offset='60%25' stop-color='%23FF6A00'/><stop offset='100%25' stop-color='%237C5CFF'/></linearGradient></defs><rect x='6' y='10' width='44' height='44' rx='11' ry='11' fill='url(%23g)'/><rect x='14' y='18' width='20' height='14' rx='3' ry='3' fill='%23fff' opacity='.92'/><rect x='14' y='36' width='12' height='4' rx='2' ry='2' fill='%23fff' opacity='.7'/><rect x='14' y='42' width='16' height='4' rx='2' ry='2' fill='%23fff' opacity='.55'/><g transform='translate(36 6) rotate(38)'><rect x='0' y='0' width='6' height='22' rx='2' ry='2' fill='%231F1B2D'/><rect x='0' y='22' width='6' height='6' fill='%23FFD66B'/><polygon points='0,28 6,28 3,34' fill='%231F1B2D'/></g><circle cx='50' cy='14' r='2' fill='%23FFD66B'/><circle cx='56' cy='22' r='1.4' fill='%23FFD66B' opacity='.85'/><circle cx='46' cy='6' r='1.2' fill='%23FFD66B' opacity='.7'/></svg>">
+<script>
+  // 防 FOUC：在样式应用前根据 localStorage 立刻把 data-theme 设上
+  (function(){
+    try{
+      var v = localStorage.getItem('knack_theme_v1') || 'system';
+      var resolved = (v === 'system')
+        ? ((window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light')
+        : v;
+      document.documentElement.setAttribute('data-theme', resolved);
+    }catch(e){}
+  })();
+</script>
+<style>
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;font-family:-apple-system,"PingFang SC","Helvetica Neue",sans-serif;color:var(--k-ink);background:var(--k-bg);overflow:hidden;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+
+  /* —— Knack v2.3 设计系统 —— */
+  :root{
+    /* 品牌点缀色（只用在 logo / primary CTA / 强调态） */
+    --k-orange:#FF6A00;
+    --k-orange-light:#FF8A3D;
+    --k-orange-soft:#fff4ea;
+    --k-purple:#7C5CFF;
+    --k-yellow:#FFD66B;
+    --k-grad:linear-gradient(135deg,#FF8A3D 0%,#FF6A00 55%,#7C5CFF 100%);
+    /* 中性色阶（高级感主基调） */
+    --k-ink:#0f1115;
+    --k-ink-2:#3a3d44;
+    --k-ink-3:#6b6e76;
+    --k-ink-4:#9a9da4;
+    --k-bg:#f7f7f5;
+    --k-bg-soft:#fbfbf9;
+    --k-surface:#ffffff;
+    --k-line:rgba(15,17,21,.07);
+    --k-line-strong:rgba(15,17,21,.12);
+    /* 圆角 / 阴影 token */
+    --r-sm:6px;
+    --r-md:8px;
+    --r-lg:12px;
+    --shadow-1:0 1px 2px rgba(15,17,21,.04),0 1px 1px rgba(15,17,21,.03);
+    --shadow-2:0 8px 24px rgba(15,17,21,.08),0 2px 6px rgba(15,17,21,.04);
+    --shadow-3:0 18px 48px rgba(15,17,21,.14),0 4px 12px rgba(15,17,21,.06);
+    /* 主题感知色（默认 = 浅色，data-theme="dark" 时被覆写） */
+    --k-mask:rgba(15,17,21,.5);
+    --k-loading-bg:rgba(255,255,255,.72);
+    --k-orange-soft-bg:#fff4ea;
+    --k-orange-soft-text:#a85a14;
+    --k-danger:#a94442;
+    --k-danger-soft:#fffafa;
+    --k-danger-border:#e7b3b1;
+    --k-stage-bg:#ffffff;
+    /* 配对色：与 --k-ink 背景对比（点击高亮 / 选中态 / toast / primary 按钮） */
+    --k-on-ink:#ffffff;
+    --k-on-ink-soft:#a8d0ff;   /* 选中态下的次级 highlight (id) */
+    --k-on-ink-soft-2:#b3e5c5; /* 选中态下的次级 highlight (class) */
+    /* hover 用的极弱叠色（不能用 rgba(0,0,0,.05) 这种硬编码 —— 暗色下完全看不到） */
+    --k-hover:rgba(15,17,21,.05);
+    /* 浮动工具栏专用（不随主题翻转，永远保持高对比的"工具条"风格） */
+    --k-floating-bg:#0f1115;
+    --k-floating-text:#ffffff;
+    --k-floating-hover:rgba(255,255,255,.12);
+    /* 行内代码块底色（在「当前选中」里展示元素 tag/id/class） */
+    --k-code-bg:#f0f1ee;
+    --k-code-text:#3a3d44;
+    color-scheme:light;
+  }
+
+  /* —— 深色主题 —— */
+  html[data-theme="dark"]{
+    --k-orange:#FF8A3D;
+    --k-orange-light:#FFA76A;
+    --k-orange-soft:rgba(255,138,61,.12);
+    --k-purple:#9A82FF;
+    --k-yellow:#FFD66B;
+    --k-grad:linear-gradient(135deg,#FFA76A 0%,#FF8A3D 55%,#9A82FF 100%);
+    --k-ink:#eef0f4;
+    --k-ink-2:#c0c4cb;
+    --k-ink-3:#8a8e96;
+    --k-ink-4:#5d6168;
+    --k-bg:#0f1115;
+    --k-bg-soft:#16191f;
+    --k-surface:#1c2027;
+    --k-line:rgba(238,240,244,.07);
+    --k-line-strong:rgba(238,240,244,.14);
+    --shadow-1:0 1px 2px rgba(0,0,0,.30),0 1px 1px rgba(0,0,0,.20);
+    --shadow-2:0 8px 24px rgba(0,0,0,.42),0 2px 6px rgba(0,0,0,.25);
+    --shadow-3:0 18px 48px rgba(0,0,0,.55),0 4px 12px rgba(0,0,0,.35);
+    --k-mask:rgba(0,0,0,.55);
+    --k-loading-bg:rgba(15,17,21,.72);
+    --k-orange-soft-bg:rgba(255,138,61,.16);
+    --k-orange-soft-text:#FFB07A;
+    --k-danger:#ff8a87;
+    --k-danger-soft:rgba(255,90,86,.10);
+    --k-danger-border:rgba(255,90,86,.32);
+    /* stage 保持浅色：用户 HTML 一般是浅色稿，反色会破坏所见即所得 */
+    --k-stage-bg:#ffffff;
+    --k-on-ink:#0f1115;
+    --k-on-ink-soft:#3a6aa0;
+    --k-on-ink-soft-2:#3a8a5c;
+    --k-hover:rgba(238,240,244,.06);
+    --k-floating-bg:#262a32;
+    --k-floating-text:#eef0f4;
+    --k-floating-hover:rgba(255,255,255,.10);
+    --k-code-bg:rgba(238,240,244,.08);
+    --k-code-text:#c0c4cb;
+    color-scheme:dark;
+  }
+  html,body{transition:background-color .25s ease,color .25s ease}
+  .topbar,.side-col,.panel,.modal,.btn,.prompt-input,.field input,.field textarea,.history-item,.crumb-item,.clarify,.clarify-option,.toast{transition:background-color .2s ease,color .2s ease,border-color .2s ease}
+  ::-webkit-scrollbar{width:8px;height:8px}
+  ::-webkit-scrollbar-thumb{background:var(--k-line-strong);border-radius:8px}
+  ::-webkit-scrollbar-thumb:hover{background:var(--k-ink-4)}
+  ::-webkit-scrollbar-track{background:transparent}
+  button,input,textarea,select{font-family:inherit}
+
+  /* 顶栏 */
+  .topbar{height:52px;display:flex;align-items:center;gap:6px;padding:0 18px;background:var(--k-surface);border-bottom:1px solid var(--k-line);flex-shrink:0;z-index:5}
+  .topbar .brand{display:flex;align-items:baseline;gap:8px;font-weight:700;font-size:16px;letter-spacing:-0.015em;margin-right:18px}
+  .topbar .brand .logo{width:22px;height:22px;flex:0 0 22px;display:block;align-self:center}
+  .topbar .brand .name{background:var(--k-grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .topbar .brand small{color:var(--k-ink-4);font-weight:500;margin-left:2px;font-size:10.5px;letter-spacing:0.04em}
+  .topbar .group{display:flex;gap:4px;padding:0 6px;position:relative}
+  .topbar .group + .group::before{content:"";position:absolute;left:0;top:8px;bottom:8px;width:1px;background:var(--k-line)}
+  .btn{font-size:12px;padding:6px 11px;border-radius:var(--r-sm);border:1px solid transparent;background:transparent;color:var(--k-ink-2);cursor:pointer;transition:background .12s,color .12s,border-color .12s;white-space:nowrap;font-weight:500;letter-spacing:-0.005em}
+  .btn:hover{background:var(--k-hover);color:var(--k-ink)}
+  .btn:disabled{opacity:.35;cursor:not-allowed;background:transparent !important}
+  .btn.bordered{border-color:var(--k-line);background:var(--k-surface)}
+  .btn.bordered:hover{border-color:var(--k-line-strong);background:var(--k-bg-soft)}
+  .btn.primary{background:var(--k-ink);color:var(--k-on-ink);border-color:var(--k-ink);box-shadow:var(--shadow-1)}
+  .btn.primary:hover{filter:brightness(0.92);color:var(--k-on-ink)}
+  .btn.brand{background:var(--k-grad);color:#fff;border-color:transparent;font-weight:600;box-shadow:0 1px 2px rgba(255,106,0,.18),inset 0 1px 0 rgba(255,255,255,.2)}
+  .btn.brand:hover{filter:brightness(1.04);box-shadow:0 4px 12px rgba(255,106,0,.28),inset 0 1px 0 rgba(255,255,255,.2)}
+  .btn.brand:disabled{filter:grayscale(.6) brightness(1.05)}
+  .btn.ghost-pause{background:var(--k-surface);border:1px solid var(--k-line);color:var(--k-ink-3);padding:6px 10px}
+  .btn.ghost-pause:hover{background:var(--k-danger-soft);border-color:var(--k-danger-border);color:var(--k-danger)}
+  .btn.ghost-pause:not(:disabled){color:var(--k-danger);border-color:var(--k-danger-border);background:var(--k-danger-soft)}
+  .topbar .spacer{flex:1}
+  .topbar .status{font-size:11.5px;color:var(--k-ink-4);margin-right:8px;letter-spacing:-0.005em}
+
+  /* 主体三栏 */
+  .layout{display:flex;height:calc(100% - 52px);min-height:0;position:relative}
+
+  /* —— 可拉伸 / 可折叠侧栏 —— */
+  .side-col{flex-shrink:0;background:var(--k-bg-soft);display:flex;flex-direction:column;overflow:hidden;position:relative;transition:width .22s cubic-bezier(.4,0,.2,1)}
+  .side-col.dragging{transition:none}
+  .side-col.collapsed{width:36px !important}
+  .side-col.collapsed .col-body,.side-col.collapsed .col-head .col-title,.side-col.collapsed .col-head .col-tip{display:none}
+  .side-col.collapsed .col-head{justify-content:center;padding:10px 0}
+  .side-col.collapsed .collapse-strip{display:flex}
+  .collapse-strip{display:none;flex-direction:column;align-items:center;justify-content:flex-start;padding:14px 0;gap:14px;flex:1;cursor:pointer;color:var(--k-ink-4);font-size:10px;letter-spacing:0.18em;writing-mode:vertical-rl;text-orientation:mixed;text-transform:uppercase;user-select:none}
+  .collapse-strip:hover{color:var(--k-ink);background:var(--k-hover)}
+  .col-head{padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:6px;flex-shrink:0;border-bottom:1px solid var(--k-line)}
+  .col-title{font-size:10.5px;letter-spacing:0.08em;text-transform:uppercase;color:var(--k-ink-3);font-weight:600;margin:0}
+  .col-tip{font-size:10px;color:var(--k-ink-4)}
+  .col-actions{display:flex;gap:4px;align-items:center}
+  .icon-btn{width:28px;height:28px;border:1px solid var(--k-line);background:var(--k-surface);border-radius:6px;color:var(--k-ink-2);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;font-size:15px;line-height:1;transition:all .12s;padding:0;font-weight:500}
+  .icon-btn:hover{background:var(--k-ink);color:var(--k-on-ink);border-color:var(--k-ink)}
+  .icon-btn.collapse-btn{font-weight:700;font-size:16px}
+
+  /* 左栏：结构大纲 */
+  .outline{width:240px}
+  .outline-body{flex:1;overflow-y:auto;padding:6px 8px;font-family:"SF Mono","JetBrains Mono",Menlo,monospace;font-size:11px;line-height:1.75}
+  .tree-node{display:flex;align-items:center;gap:4px;padding:2px 5px;border-radius:4px;cursor:pointer;color:var(--k-ink-2);white-space:nowrap;user-select:none}
+  .tree-node:hover{background:var(--k-hover)}
+  .tree-node.sel{background:var(--k-ink);color:var(--k-on-ink)}
+  .tree-node.sel .tag-name{color:var(--k-on-ink)}
+  .tree-node.sel .tag-id{color:var(--k-on-ink-soft)}
+  .tree-node.sel .tag-cls{color:var(--k-on-ink-soft-2)}
+  .tree-node.locked{opacity:.45}
+  .tree-toggle{width:12px;display:inline-block;text-align:center;color:var(--k-ink-4);font-size:10px;flex-shrink:0}
+  .tree-toggle.empty{visibility:hidden}
+  .tag-name{color:#8a6a3c}
+  .tag-id{color:#3565a6}
+  .tag-cls{color:#3a8a5c}
+  .tree-text{color:var(--k-ink-4);font-style:italic;margin-left:4px;overflow:hidden;text-overflow:ellipsis;max-width:120px}
+  .tree-lock{margin-left:auto;font-size:10px;opacity:0.6}
+
+  /* 中间舞台 */
+  .stage{flex:1;position:relative;background:var(--k-surface);min-width:0;overflow:hidden}
+  .preview-frame{width:100%;height:100%;border:0;background:var(--k-stage-bg)}
+  .stage-overlay{position:absolute;inset:0;pointer-events:none;z-index:2}
+
+  /* 拖拽分隔条（鼠标移近会高亮） */
+  .resizer{flex-shrink:0;width:6px;background:transparent;cursor:col-resize;position:relative;z-index:4;transition:background .15s}
+  .resizer::before{content:"";position:absolute;left:50%;top:0;bottom:0;width:1px;background:var(--k-line);transform:translateX(-50%);transition:background .15s,width .15s}
+  .resizer::after{content:"";position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:3px;height:42px;border-radius:3px;background:transparent;transition:background .15s,height .15s}
+  .resizer:hover::after,.resizer.active::after{background:var(--k-orange);height:56px}
+  .resizer:hover::before,.resizer.active::before{background:rgba(255,106,0,.4);width:2px}
+  .resizer:hover,.resizer.active{background:rgba(255,106,0,.06)}
+
+  /* 空态：克制版 */
+  .empty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px;color:var(--k-ink-3);background:radial-gradient(1200px 600px at 50% -200px,rgba(255,106,0,.04),transparent 50%),var(--k-surface);text-align:center;padding:24px}
+  .empty .empty-logo{width:56px;height:56px;margin-bottom:2px;filter:drop-shadow(0 8px 20px rgba(255,106,0,.18))}
+  .empty h2{margin:0;font-size:22px;color:var(--k-ink);font-weight:700;letter-spacing:-0.018em}
+  .empty .tagline{font-size:13px;color:var(--k-ink-3);margin:0;letter-spacing:-0.005em}
+  .empty .tagline b{background:var(--k-grad);-webkit-background-clip:text;background-clip:text;color:transparent;font-weight:600}
+  .empty p{margin:0;font-size:13px;line-height:1.6;max-width:520px}
+  .empty .drop-hint{padding:30px 40px;border:1px solid var(--k-line);border-radius:var(--r-lg);background:var(--k-bg-soft);box-shadow:var(--shadow-1);transition:all .18s;min-width:320px}
+  .empty .drop-hint:hover{border-color:var(--k-line-strong);background:var(--k-surface)}
+  .empty.dragover .drop-hint{border:1.5px dashed var(--k-orange);background:var(--k-surface);box-shadow:0 12px 30px rgba(255,106,0,.10);transform:scale(1.005)}
+  .empty .drop-icon{font-size:18px;line-height:1;margin-bottom:8px;color:var(--k-ink-4);letter-spacing:0.18em;text-transform:uppercase;font-size:10px;font-weight:600}
+  .empty .drop-hint p{margin-bottom:14px;color:var(--k-ink-3);font-size:12.5px}
+  .empty .actions{display:flex;gap:8px;margin-top:4px;flex-wrap:wrap;justify-content:center}
+  .empty .micro{font-size:11px;color:var(--k-ink-4);margin-top:6px;letter-spacing:0.005em}
+
+  /* 选中后悬浮的工具栏（在 stage overlay 上） */
+  .floating-toolbar{position:absolute;background:var(--k-floating-bg);color:var(--k-floating-text);border-radius:8px;padding:4px;display:flex;gap:1px;font-size:11px;z-index:6;pointer-events:auto;box-shadow:var(--shadow-2);display:none;border:1px solid rgba(255,255,255,.08)}
+  .floating-toolbar.show{display:flex}
+  .floating-toolbar .ft-btn{padding:5px 9px;border-radius:5px;cursor:pointer;color:var(--k-floating-text);border:0;background:transparent;font-size:11px;font-weight:500;letter-spacing:-0.005em;transition:background .12s;line-height:1}
+  .floating-toolbar .ft-btn:hover{background:var(--k-floating-hover);color:var(--k-floating-text)}
+  .floating-toolbar .ft-btn.danger:hover{background:#c8444a;color:#fff}
+  .floating-toolbar .ft-sep{width:1px;background:rgba(255,255,255,.16);margin:3px 2px}
+
+  /* 右栏：工作区 */
+  .side{width:380px}
+  .side .col-body{flex:1;display:flex;flex-direction:column;min-height:0;overflow:hidden}
+  .panel{padding:14px 16px;border-bottom:1px solid var(--k-line)}
+  .panel h4{margin:0 0 8px;font-size:10.5px;letter-spacing:0.08em;text-transform:uppercase;color:var(--k-ink-3);font-weight:600}
+
+  .sel-summary{font-size:12.5px;color:var(--k-ink-2);margin-bottom:8px;min-height:1.5em;line-height:1.55}
+  .sel-empty{color:var(--k-ink-4);font-style:normal}
+  .crumb{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px}
+  .crumb-item{font-family:"SF Mono","JetBrains Mono",Menlo,monospace;font-size:10.5px;background:var(--k-surface);border:1px solid var(--k-line);padding:2px 7px;border-radius:5px;cursor:pointer;color:var(--k-ink-2);transition:all .12s}
+  .crumb-item:hover{background:var(--k-bg);border-color:var(--k-line-strong)}
+  .crumb-item.current{background:var(--k-ink);color:var(--k-on-ink);border-color:var(--k-ink)}
+  .sel-tip{font-size:11px;color:var(--k-ink-4);line-height:1.55}
+  .k-code{font-family:"SF Mono","JetBrains Mono",Menlo,monospace;background:var(--k-code-bg);color:var(--k-code-text);padding:1px 6px;border-radius:4px;font-size:11px;border:1px solid var(--k-line)}
+
+  /* 输入区 */
+  .prompt-area{flex:1;display:flex;flex-direction:column;padding:14px 16px;min-height:0;overflow-y:auto}
+  .prompt-area h4{margin:0 0 8px}
+  .prompt-input{width:100%;flex:1;min-height:96px;padding:11px 13px;border:1px solid var(--k-line-strong);border-radius:var(--r-md);font-size:13px;line-height:1.6;resize:none;background:var(--k-surface);color:var(--k-ink);outline:none;transition:border-color .15s,box-shadow .15s;letter-spacing:-0.005em}
+  .prompt-input::placeholder{color:var(--k-ink-4)}
+  .prompt-input:focus{border-color:var(--k-ink);box-shadow:0 0 0 3px rgba(15,17,21,.05)}
+  .prompt-input:disabled{background:var(--k-bg);color:var(--k-ink-4)}
+  .prompt-actions{display:flex;gap:8px;margin-top:10px;align-items:center}
+  .prompt-hint{font-size:11px;color:var(--k-ink-4);flex:1}
+  .prompt-hint kbd{font-family:"SF Mono",Menlo,monospace;font-size:10px;background:var(--k-surface);border:1px solid var(--k-line);border-bottom-width:1.5px;padding:1px 5px;border-radius:4px;color:var(--k-ink-2);margin:0 1px}
+  .prompt-tags{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px}
+  .prompt-tag{font-size:11px;padding:3px 9px;background:var(--k-surface);border:1px solid var(--k-line);border-radius:99px;cursor:pointer;color:var(--k-ink-3);transition:all .12s;letter-spacing:-0.005em}
+  .prompt-tag:hover{background:var(--k-ink);color:var(--k-on-ink);border-color:var(--k-ink)}
+
+  /* 澄清面板 */
+  .clarify{margin-top:12px;padding:14px;background:var(--k-surface);border:1px solid var(--k-line);border-left:3px solid var(--k-orange);border-radius:var(--r-md);display:none;max-height:46vh;overflow-y:auto;box-shadow:var(--shadow-1)}
+  .clarify.show{display:block}
+  .clarify-title{font-size:11px;color:var(--k-ink-3);margin-bottom:6px;font-weight:600;display:flex;align-items:center;gap:6px;letter-spacing:0.04em;text-transform:uppercase}
+  .clarify-text{font-size:13px;color:var(--k-ink);margin-bottom:12px;line-height:1.55;letter-spacing:-0.005em}
+  .clarify-options{display:flex;flex-direction:column;gap:5px;margin-bottom:8px}
+  .clarify-option{padding:10px 12px;background:var(--k-bg-soft);border:1px solid var(--k-line);border-radius:var(--r-md);cursor:pointer;font-size:12.5px;color:var(--k-ink-2);text-align:left;line-height:1.5;transition:all .12s;letter-spacing:-0.005em}
+  .clarify-option:hover{background:var(--k-surface);border-color:var(--k-ink);color:var(--k-ink)}
+  .clarify-option b{color:var(--k-ink);font-weight:600}
+  .clarify-option.other{background:transparent;border-style:dashed;color:var(--k-ink-3)}
+  .clarify-reply{display:none;margin-top:8px}
+  .clarify-reply.show{display:flex;gap:6px}
+  .clarify-reply input{flex:1;padding:7px 11px;border:1px solid var(--k-line-strong);border-radius:var(--r-sm);font-size:12px;outline:none;background:var(--k-bg-soft);transition:all .15s}
+  .clarify-reply input:focus{border-color:var(--k-ink);background:var(--k-surface);box-shadow:0 0 0 3px var(--k-line)}
+  .clarify-cancel{font-size:11px;color:var(--k-ink-4);background:none;border:none;cursor:pointer;margin-top:6px;padding:2px 0}
+  .clarify-cancel:hover{color:var(--k-ink-2)}
+
+  /* 历史 */
+  .history{max-height:172px;overflow-y:auto;padding-right:2px}
+  .history-item{padding:8px 11px 8px 13px;background:var(--k-surface);border:1px solid var(--k-line);border-radius:var(--r-sm);margin-bottom:5px;font-size:12px;cursor:pointer;display:flex;justify-content:space-between;gap:8px;align-items:center;transition:all .12s;position:relative;letter-spacing:-0.005em}
+  .history-item::before{content:"";position:absolute;left:0;top:8px;bottom:8px;width:2px;background:transparent;border-radius:2px;transition:background .12s}
+  .history-item:hover{background:var(--k-bg-soft);border-color:var(--k-line-strong)}
+  .history-item:hover::before{background:var(--k-orange)}
+  .history-item:hover::after{content:"回滚到这里";position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:10px;color:var(--k-orange);font-weight:600;letter-spacing:0.02em;background:var(--k-orange-soft);padding:2px 6px;border-radius:4px;pointer-events:none}
+  .history-item:hover .h-time{opacity:0}
+  .history-item.current{border-color:var(--k-ink);background:var(--k-surface);box-shadow:0 0 0 1px var(--k-ink)}
+  .history-item.current::before{background:var(--k-ink)}
+  .history-item.current:hover::after{display:none}
+  .history-item.current:hover .h-time{opacity:1}
+  .history-item .h-text{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--k-ink-2);transition:opacity .12s}
+  .history-item .h-time{color:var(--k-ink-4);font-size:10px;flex-shrink:0;transition:opacity .12s;font-variant-numeric:tabular-nums}
+  .history-empty{color:var(--k-ink-4);font-size:12px}
+
+  /* 模态 */
+  .modal-mask{position:fixed;inset:0;background:var(--k-mask);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;z-index:50}
+  .modal-mask.show{display:flex}
+  .modal{background:var(--k-surface);border-radius:var(--r-lg);padding:26px 28px;width:480px;max-width:92vw;box-shadow:var(--shadow-3);border:1px solid var(--k-line)}
+  .modal h3{margin:0 0 6px;font-size:16px;letter-spacing:-0.015em;font-weight:700}
+  .modal .desc{font-size:12px;color:var(--k-ink-3);margin-bottom:20px;line-height:1.6;letter-spacing:-0.005em}
+  .modal .desc code{font-family:"SF Mono",Menlo,monospace;font-size:11px;background:var(--k-bg);padding:1px 5px;border-radius:4px;color:var(--k-ink-2)}
+  .field{margin-bottom:14px}
+  .field label{display:block;font-size:11.5px;color:var(--k-ink-2);margin-bottom:5px;font-weight:600;letter-spacing:-0.005em}
+  .field input,.field select,.field textarea{width:100%;padding:8px 11px;border:1px solid var(--k-line-strong);border-radius:var(--r-sm);font-size:13px;outline:none;background:var(--k-bg-soft);font-family:inherit;transition:all .15s}
+  .field input:focus,.field textarea:focus{border-color:var(--k-ink);background:var(--k-surface);box-shadow:0 0 0 3px var(--k-line)}
+  .field .field-hint{font-size:11px;color:var(--k-ink-4);margin-top:4px;line-height:1.5}
+  .modal-foot{display:flex;justify-content:flex-end;gap:8px;margin-top:20px}
+
+  /* Toast */
+  .toast{position:fixed;bottom:28px;left:50%;transform:translate(-50%,8px);background:var(--k-ink);color:var(--k-on-ink);padding:9px 18px;border-radius:999px;font-size:12.5px;opacity:0;transition:opacity .25s,transform .25s;pointer-events:none;z-index:100;box-shadow:0 10px 30px rgba(15,17,21,.20),0 2px 6px rgba(15,17,21,.08);letter-spacing:-0.005em;font-weight:500;border:1px solid var(--k-line)}
+  .toast.show{opacity:1;transform:translate(-50%,0)}
+  .toast.error{background:#b1393e;color:#fff;border-color:transparent}
+  .toast.success{background:#1f6a4a;color:#fff;border-color:transparent}
+  .toast.info{background:#2c4f7c;color:#fff;border-color:transparent}
+
+  .loading{position:absolute;inset:0;background:var(--k-loading-bg);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;z-index:10;flex-direction:column;gap:14px}
+  .spinner{width:32px;height:32px;border:2.5px solid rgba(255,106,0,.18);border-top-color:var(--k-orange);border-right-color:var(--k-orange-light);border-radius:50%;animation:spin .9s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .loading-text{font-size:13px;color:var(--k-ink-2);font-weight:600;letter-spacing:-0.005em}
+  .loading-sub{font-size:11px;color:var(--k-ink-4);margin-top:-4px}
+  .loading-sub kbd{font-family:"SF Mono",Menlo,monospace;font-size:10px;background:var(--k-surface);border:1px solid var(--k-line);padding:1px 5px;border-radius:4px;color:var(--k-ink-2);margin:0 2px}
+
+  /* 框选矩形 */
+  .marquee{position:absolute;border:1.5px dashed var(--k-ink);background:rgba(15,17,21,0.05);pointer-events:none;display:none;z-index:3;border-radius:2px}
+
+  /* Restore prompt */
+  .restore-bar{padding:8px 16px;background:var(--k-bg-soft);border-bottom:1px solid var(--k-line);font-size:12px;display:flex;align-items:center;gap:10px;display:none}
+  .restore-bar.show{display:flex}
+  .restore-bar .restore-msg{flex:1;color:var(--k-ink-2);letter-spacing:-0.005em}
+  .restore-bar .restore-dot{width:6px;height:6px;border-radius:50%;background:var(--k-orange);box-shadow:0 0 0 3px rgba(255,106,0,.18)}
+
+  textarea{font-family:inherit}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">
+    <svg class="logo" viewBox="0 0 64 64" aria-label="Knack logo">
+      <defs>
+        <linearGradient id="kgrad" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#FF8A3D"/>
+          <stop offset="60%" stop-color="#FF6A00"/>
+          <stop offset="100%" stop-color="#7C5CFF"/>
+        </linearGradient>
+      </defs>
+      <rect x="6" y="10" width="44" height="44" rx="11" ry="11" fill="url(#kgrad)"/>
+      <rect x="14" y="18" width="20" height="14" rx="3" ry="3" fill="#fff" opacity="0.92"/>
+      <rect x="14" y="36" width="12" height="4" rx="2" ry="2" fill="#fff" opacity="0.7"/>
+      <rect x="14" y="42" width="16" height="4" rx="2" ry="2" fill="#fff" opacity="0.55"/>
+      <g transform="translate(36 6) rotate(38)">
+        <rect x="0" y="0" width="6" height="22" rx="2" ry="2" fill="#1F1B2D"/>
+        <rect x="0" y="22" width="6" height="6" fill="#FFD66B"/>
+        <polygon points="0,28 6,28 3,34" fill="#1F1B2D"/>
+      </g>
+      <circle cx="50" cy="14" r="2" fill="#FFD66B"/>
+      <circle cx="56" cy="22" r="1.4" fill="#FFD66B" opacity="0.85"/>
+      <circle cx="46" cy="6" r="1.2" fill="#FFD66B" opacity="0.7"/>
+    </svg>
+    <span class="name">Knack</span>
+    <small>v2.3</small>
+  </div>
+  <div class="group">
+    <button class="btn" id="btnOpen" title="打开 HTML 文件">打开</button>
+    <button class="btn" id="btnPaste" title="粘贴 HTML 源码">粘贴</button>
+    <button class="btn" id="btnExport" title="导出当前 HTML">导出</button>
+  </div>
+  <div class="group">
+    <button class="btn" id="btnUndo" disabled title="撤销上一步改动 (⌘Z)">↶ 撤销</button>
+    <button class="btn" id="btnRedo" disabled title="重做：撤销后想反悔，恢复刚撤掉的那一步 (⇧⌘Z)">↷ 重做</button>
+  </div>
+  <div class="spacer"></div>
+  <span class="status" id="statusText"></span>
+  <button class="btn bordered" id="btnTheme" title="切换主题（浅色 / 深色 / 跟随系统）" aria-label="切换主题">
+    <span id="btnThemeIcon" style="display:inline-block;width:14px;text-align:center;font-size:13px;line-height:1">☀</span>
+    <span id="btnThemeText" style="margin-left:4px">浅色</span>
+  </button>
+  <button class="btn bordered" id="btnSettings" title="LLM 设置">设置</button>
+</div>
+
+<div class="restore-bar" id="restoreBar">
+  <span class="restore-dot"></span>
+  <span class="restore-msg" id="restoreMsg"></span>
+  <button class="btn primary" id="btnRestore">恢复</button>
+  <button class="btn" id="btnRestoreDismiss">忽略</button>
+</div>
+
+<div class="layout" id="layout">
+  <!-- 左侧大纲 -->
+  <div class="side-col outline" id="outlineCol">
+    <div class="col-head">
+      <h4 class="col-title">结构大纲</h4>
+      <div class="col-actions">
+        <span class="col-tip">点选 / 锁定</span>
+        <button class="icon-btn collapse-btn" data-target="outlineCol" title="收起 (⌘B)" aria-label="折叠">‹</button>
+      </div>
+    </div>
+    <div class="col-body outline-body" id="outlineBody">
+      <div style="color:var(--k-ink-4);font-size:11px;padding:8px">加载 HTML 后显示元素树</div>
+    </div>
+    <div class="collapse-strip" data-target="outlineCol" title="展开">结构大纲</div>
+  </div>
+  <div class="resizer" id="resizerLeft" data-side="left" title="拖动调整大纲宽度，双击重置"></div>
+
+  <!-- 中间舞台 -->
+  <div class="stage" id="stage">
+    <iframe class="preview-frame" id="preview"></iframe>
+    <div class="stage-overlay" id="overlay">
+      <div class="marquee" id="marquee"></div>
+      <div class="floating-toolbar" id="floatToolbar">
+        <button class="ft-btn" data-act="up" title="上移">⇡</button>
+        <button class="ft-btn" data-act="down" title="下移">⇣</button>
+        <div class="ft-sep"></div>
+        <button class="ft-btn" data-act="edit" title="编辑文字">✎ 文字</button>
+        <button class="ft-btn" data-act="dup" title="复制一份">⧉</button>
+        <button class="ft-btn" data-act="lock" title="锁定/解锁">🔒</button>
+        <button class="ft-btn" data-act="copy" title="复制 HTML">📋</button>
+        <div class="ft-sep"></div>
+        <button class="ft-btn danger" data-act="del" title="删除">✕</button>
+      </div>
+    </div>
+    <div class="empty" id="empty">
+      <svg class="empty-logo" viewBox="0 0 64 64" aria-hidden="true">
+        <defs>
+          <linearGradient id="kgrad-empty" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#FF8A3D"/>
+            <stop offset="60%" stop-color="#FF6A00"/>
+            <stop offset="100%" stop-color="#7C5CFF"/>
+          </linearGradient>
+        </defs>
+        <rect x="6" y="10" width="44" height="44" rx="11" ry="11" fill="url(#kgrad-empty)"/>
+        <rect x="14" y="18" width="20" height="14" rx="3" ry="3" fill="#fff" opacity="0.92"/>
+        <rect x="14" y="36" width="12" height="4" rx="2" ry="2" fill="#fff" opacity="0.7"/>
+        <rect x="14" y="42" width="16" height="4" rx="2" ry="2" fill="#fff" opacity="0.55"/>
+        <g transform="translate(36 6) rotate(38)">
+          <rect x="0" y="0" width="6" height="22" rx="2" ry="2" fill="#1F1B2D"/>
+          <rect x="0" y="22" width="6" height="6" fill="#FFD66B"/>
+          <polygon points="0,28 6,28 3,34" fill="#1F1B2D"/>
+        </g>
+      </svg>
+      <h2>把 HTML 拖到这里</h2>
+      <p class="tagline">用 <b>Knack</b> 点选 + 自然语言，像改 PPT 一样改任何 HTML 稿件</p>
+      <div class="drop-hint">
+        <div class="drop-icon">DROP · OPEN · PASTE</div>
+        <p>拖入 .html 文件，或选择下方任一方式开始</p>
+        <div class="actions">
+          <button class="btn brand" id="btnOpenEmpty">选择文件</button>
+          <button class="btn bordered" id="btnPasteEmpty">粘贴源码</button>
+          <button class="btn bordered" id="btnSampleEmpty">试用样例</button>
+        </div>
+      </div>
+      <p class="micro">所有改动都只在你的本地浏览器，不会上传任何内容</p>
+    </div>
+    <div class="loading" id="loading" style="display:none">
+      <div class="spinner"></div>
+      <div class="loading-text" id="loadingText">AI 改写中...</div>
+      <div class="loading-sub" id="loadingSub">按 <kbd>ESC</kbd> 或点 <kbd>暂停</kbd> 可中断</div>
+    </div>
+  </div>
+
+  <div class="resizer" id="resizerRight" data-side="right" title="拖动调整工作区宽度，双击重置"></div>
+
+  <!-- 右侧工作区 -->
+  <aside class="side-col side" id="sideCol">
+    <div class="col-head">
+      <h4 class="col-title">工作区</h4>
+      <div class="col-actions">
+        <span class="col-tip">选中 · 改写 · 历史</span>
+        <button class="icon-btn collapse-btn" data-target="sideCol" title="收起 (⌘\\)" aria-label="折叠">›</button>
+      </div>
+    </div>
+    <div class="col-body">
+    <div class="panel">
+      <h4>当前选中</h4>
+      <div class="sel-summary" id="selSummary"><span class="sel-empty">点击预览中的元素来锚定；Alt+点击进入更小的子元素；按住空白拖矩形可框选多个</span></div>
+      <div class="crumb" id="crumb"></div>
+      <div class="sel-tip" id="selTip"></div>
+    </div>
+
+    <div class="prompt-area">
+      <h4>用自然语言修改</h4>
+      <div class="prompt-tags" id="promptTags">
+        <span class="prompt-tag" data-t="改成方形（去掉圆角）">改成方形</span>
+        <span class="prompt-tag" data-t="改成圆形（圆角 50%）">改成圆形</span>
+        <span class="prompt-tag" data-t="字号放大到原来的 1.5 倍">字放大</span>
+        <span class="prompt-tag" data-t="加深一点阴影">加阴影</span>
+        <span class="prompt-tag" data-t="背景换成深蓝色，文字改为白色">深蓝底白字</span>
+        <span class="prompt-tag" data-t="把内容拆成两行（主标题/副标题）">拆两行</span>
+      </div>
+      <textarea class="prompt-input" id="promptInput" placeholder="告诉 Knack 你想怎么改，比如：背景换深蓝、字号放大、加副标题、删掉这块……"></textarea>
+      <div class="prompt-actions">
+        <span class="prompt-hint"><kbd>⌘</kbd>+<kbd>Enter</kbd> 提交</span>
+        <button class="btn ghost-pause" id="btnAbort" disabled title="中断当前 AI 调用 (ESC)">暂停</button>
+        <button class="btn brand" id="btnApply">发送给 AI</button>
+      </div>
+
+      <!-- 澄清面板 -->
+      <div class="clarify" id="clarifyPanel">
+        <div class="clarify-title">Knack 想跟你确认一下</div>
+        <div class="clarify-text" id="clarifyText"></div>
+        <div class="clarify-options" id="clarifyOptions"></div>
+        <div class="clarify-reply" id="clarifyReply">
+          <input type="text" id="clarifyReplyInput" placeholder="补充说明...">
+          <button class="btn brand" id="btnClarifySend">发送</button>
+        </div>
+        <button class="clarify-cancel" id="btnClarifyCancel">取消本次修改</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h4>修改历史</h4>
+      <div class="history" id="historyList"><div class="history-empty">暂无修改</div></div>
+    </div>
+    </div><!-- /col-body -->
+    <div class="collapse-strip" data-target="sideCol" title="展开">工作区</div>
+  </aside>
+</div>
+
+<!-- 设置模态 -->
+<div class="modal-mask" id="settingsModal">
+  <div class="modal">
+    <h3>LLM 设置</h3>
+    <div class="desc">支持 OpenAI 兼容协议。Base URL 填到 <code>/v1</code> 这一级即可，工具会自动补 <code>/chat/completions</code>。Key 与配置只保存在你本地浏览器 localStorage。</div>
+    <div class="field">
+      <label>Base URL</label>
+      <input type="text" id="cfgBase" placeholder="例：https://xxx.didichuxing.com/v1">
+      <div class="field-hint">如果你的完整 endpoint 是 https://api.xxx.com/v1/chat/completions，这里只填到 /v1</div>
+    </div>
+    <div class="field">
+      <label>API Key</label>
+      <input type="password" id="cfgKey" placeholder="sk-... 或公司内部 token">
+    </div>
+    <div class="field">
+      <label>Model</label>
+      <input type="text" id="cfgModel" placeholder="例：gpt-4o / deepseek-chat / 公司模型名">
+    </div>
+    <div class="field">
+      <label>额外请求头（JSON，可选）</label>
+      <textarea id="cfgHeaders" rows="2" placeholder='{"X-Custom-Header":"value"}' style="font-family:&quot;SF Mono&quot;,Menlo,monospace;font-size:12px"></textarea>
+      <div class="field-hint">公司内部网关如需特殊鉴权头，按需填</div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" id="btnTestConn">测试连接</button>
+      <button class="btn" id="btnCfgCancel">取消</button>
+      <button class="btn primary" id="btnCfgSave">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- 粘贴源码模态 -->
+<div class="modal-mask" id="pasteModal">
+  <div class="modal" style="width:640px">
+    <h3>粘贴 HTML 源码</h3>
+    <div class="desc">把完整的 HTML 内容粘贴到下面，点确定即可加载。</div>
+    <div class="field">
+      <textarea id="pasteArea" rows="14" placeholder="<!doctype html>..." style="font-family:&quot;SF Mono&quot;,Menlo,monospace;font-size:12px"></textarea>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" id="btnPasteCancel">取消</button>
+      <button class="btn primary" id="btnPasteOk">加载</button>
+    </div>
+  </div>
+</div>
+
+<input type="file" id="fileInput" accept=".html,.htm" style="display:none">
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================
+ * Knack v2.3
+ * 在 v2.2 基础上的迭代：
+ *  - 左右两栏可鼠标拖拽调宽（180~420 / 320~560，双击 resizer 重置）
+ *  - 左右两栏可一键折叠成 36px 窄条；快捷键 ⌘B（左栏）/ ⌘\（右栏）
+ *  - 宽度与折叠态写入 localStorage（KEY_LAYOUT），下次打开恢复
+ *  - 视觉升级：引入完整设计系统（中性色阶 + 圆角/阴影 token + 极简按钮 + 高级感留白）
+ *  - [v2.3 patch] 深色模式：浅色 / 深色 / 跟随系统 三档切换；写 localStorage[knack_theme_v1]
+ *      iframe 预览保持浅色（用户 HTML 大多是浅色稿，反色破坏所见即所得）
+ * ============================================================ */
+
+const $ = sel => document.querySelector(sel);
+
+// ---------- 常量 ----------
+const CFG_KEY = 'html_modifier_cfg_v1';
+const DRAFT_KEY = 'html_modifier_draft_v1';
+const LAYOUT_KEY = 'knack_layout_v1';
+const LAYOUT_LIMITS = {
+  outlineCol: { min: 180, max: 420, def: 240 },
+  sideCol:    { min: 320, max: 560, def: 380 }
+};
+const THEME_KEY = 'knack_theme_v1';
+const THEME_ORDER = ['system', 'light', 'dark'];
+const THEME_META = {
+  system: { icon: '⌥', text: '跟随系统', label: '跟随系统' },
+  light:  { icon: '☀', text: '浅色',     label: '浅色模式' },
+  dark:   { icon: '☾', text: '深色',     label: '深色模式' }
+};
+const HOVER_CLASS = '__hm_hover__';
+const SEL_CLASS = '__hm_sel__';
+const LOCK_CLASS = '__hm_locked__';
+const STYLE_ID = '__hm_style__';
+const LOCK_ATTR = 'data-hm-lock';
+const EDIT_ATTR = 'data-hm-editing';
+
+const OVERLAY_STYLE = `
+  .${HOVER_CLASS}{outline:2px dashed #5b8def !important;outline-offset:-2px}
+  .${SEL_CLASS}{outline:2.5px solid #1a1a1a !important;outline-offset:-2px;box-shadow:0 0 0 4px rgba(26,26,26,0.08) !important}
+  .${LOCK_CLASS}{outline:2px solid #f0a040 !important;outline-offset:-2px}
+  [${EDIT_ATTR}]{outline:2px solid #2d6a4f !important;outline-offset:-2px;background:rgba(45,106,79,.05) !important;cursor:text !important}
+  *{cursor:crosshair}
+  [${EDIT_ATTR}] *{cursor:text}
+  [${LOCK_ATTR}],[${LOCK_ATTR}] *{cursor:not-allowed !important}
+`;
+
+// ---------- Toast ----------
+const toastEl = $('#toast');
+let toastTimer = null;
+function toast(msg, type = '') {
+  toastEl.textContent = msg;
+  toastEl.className = 'toast show ' + type;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toastEl.className = 'toast', 2400);
+}
+
+// ---------- Config ----------
+function loadCfg() { try { return JSON.parse(localStorage.getItem(CFG_KEY) || '{}'); } catch { return {}; } }
+function saveCfg(c) { localStorage.setItem(CFG_KEY, JSON.stringify(c)); }
+function getCfg() { return Object.assign({ base: '', key: '', model: '', headers: '' }, loadCfg()); }
+
+// ---------- 状态 ----------
+const state = {
+  filename: 'untitled.html',
+  history: [],
+  hIndex: -1,
+  selected: [],            // [Element] in iframe doc
+  hovered: null,
+  marqueeActive: false,
+  pendingClick: null,      // 用于深度切换
+  editingEl: null,         // 当前正在 contentEditable 的元素
+  pendingRewrite: null,    // 当前等待澄清的改写上下文
+  aiAbort: null,           // 当前 AI 调用的 AbortController
+  aiBusy: false,           // 是否正在 AI 调用中
+  // 大纲树折叠状态：以路径字符串保存
+  collapsed: new Set()
+};
+
+// ---------- iframe ----------
+const previewEl = $('#preview');
+const overlayEl = $('#overlay');
+const stageEl = $('#stage');
+const emptyEl = $('#empty');
+const marqueeEl = $('#marquee');
+const floatToolbar = $('#floatToolbar');
+
+function getDoc() { return previewEl.contentDocument || previewEl.contentWindow?.document; }
+
+function injectOverlayStyles() {
+  const doc = getDoc();
+  if (!doc) return;
+  let style = doc.getElementById(STYLE_ID);
+  if (!style) {
+    style = doc.createElement('style');
+    style.id = STYLE_ID;
+    doc.head?.appendChild(style);
+  }
+  style.textContent = OVERLAY_STYLE;
+}
+
+function clearVisualMarks(doc) {
+  if (!doc) return;
+  doc.querySelectorAll('.' + HOVER_CLASS).forEach(el => el.classList.remove(HOVER_CLASS));
+  doc.querySelectorAll('.' + SEL_CLASS).forEach(el => el.classList.remove(SEL_CLASS));
+  doc.querySelectorAll('.' + LOCK_CLASS).forEach(el => el.classList.remove(LOCK_CLASS));
+}
+
+function refreshVisualMarks() {
+  const doc = getDoc();
+  if (!doc) return;
+  clearVisualMarks(doc);
+  doc.querySelectorAll(`[${LOCK_ATTR}]`).forEach(el => el.classList.add(LOCK_CLASS));
+  if (state.hovered && !state.selected.includes(state.hovered) && !isLocked(state.hovered)) {
+    state.hovered.classList.add(HOVER_CLASS);
+  }
+  state.selected.forEach(el => el.classList.add(SEL_CLASS));
+  positionFloatToolbar();
+}
+
+function isLocked(el) {
+  while (el && el.nodeType === 1) {
+    if (el.hasAttribute && el.hasAttribute(LOCK_ATTR)) return true;
+    el = el.parentElement;
+  }
+  return false;
+}
+
+// ---------- 加载/序列化 ----------
+function loadHtml(html, opts = {}) {
+  const { resetHistory = true, label = '初始版本' } = opts;
+  state.selected = [];
+  state.hovered = null;
+  state.editingEl = null;
+  hideFloatToolbar();
+  hideClarify();
+
+  previewEl.srcdoc = html;
+  emptyEl.style.display = 'none';
+
+  previewEl.onload = () => {
+    injectOverlayStyles();
+    bindIframeEvents();
+    refreshVisualMarks();
+    updateSelectionPanel();
+    renderOutline();
+    saveDraft();
+  };
+
+  if (resetHistory) {
+    state.history = [{ html, label, time: now() }];
+    state.hIndex = 0;
+  }
+  updateUndoRedoButtons();
+  renderHistory();
+}
+
+function getCurrentHtml() {
+  const doc = getDoc();
+  if (!doc || !doc.documentElement) return '';
+  // 序列化前清掉视觉标记
+  finishEditing();
+  clearVisualMarks(doc);
+  const styleNode = doc.getElementById(STYLE_ID);
+  if (styleNode) styleNode.remove();
+  const html = '<!doctype html>\n' + doc.documentElement.outerHTML;
+  // 重注，让用户继续编辑
+  injectOverlayStyles();
+  refreshVisualMarks();
+  return html;
+}
+
+// ---------- F1: 智能点选 ----------
+const SKIP_TAGS = new Set(['html','body','head','style','script','meta','link','title','br','hr']);
+
+function pickEditable(target) {
+  if (!target || target.nodeType !== 1) return null;
+  const tag = (target.tagName || '').toLowerCase();
+  if (SKIP_TAGS.has(tag)) return null;
+  return target;
+}
+
+// 深度比较：在一个点 (x,y) 处，elementFromPoint 已经返回最深的可点击元素
+// 但有时它返回的是文字节点的包裹 span / 图标 svg path，我们要"语义可读"的元素
+function getElementAtPoint(doc, x, y) {
+  const el = doc.elementFromPoint(x, y);
+  return pickEditable(el);
+}
+
+// 找祖先链
+function getAncestorChain(el) {
+  const chain = [];
+  let cur = el;
+  while (cur && cur.tagName && cur.tagName.toLowerCase() !== 'html') {
+    chain.unshift(cur);
+    cur = cur.parentElement;
+  }
+  return chain;
+}
+
+// ---------- F2: 框选 ----------
+function startMarquee(startX, startY, doc, shiftKey) {
+  let started = false;
+  state.marqueeActive = false;
+
+  const onMove = ev => {
+    const dx = Math.abs(ev.clientX - startX);
+    const dy = Math.abs(ev.clientY - startY);
+    if (!started && (dx > 5 || dy > 5)) {
+      started = true;
+      state.marqueeActive = true;
+    }
+    if (started) updateMarqueeRect(startX, startY, ev.clientX, ev.clientY);
+  };
+
+  const onUp = ev => {
+    doc.removeEventListener('mousemove', onMove, true);
+    doc.removeEventListener('mouseup', onUp, true);
+    if (started) {
+      const rect = computeRect(startX, startY, ev.clientX, ev.clientY);
+      const elements = elementsInRect(doc, rect);
+      if (elements.length > 0) {
+        state.selected = shiftKey ? mergeSel(state.selected, elements) : elements;
+        refreshVisualMarks();
+        updateSelectionPanel();
+        renderOutline();
+      } else if (!shiftKey) {
+        state.selected = [];
+        refreshVisualMarks();
+        updateSelectionPanel();
+        renderOutline();
+      }
+      marqueeEl.style.display = 'none';
+      // 阻止后续 click 触发选中
+      const blockClick = e2 => {
+        e2.stopPropagation();
+        e2.preventDefault();
+        doc.removeEventListener('click', blockClick, true);
+      };
+      doc.addEventListener('click', blockClick, true);
+      setTimeout(() => { state.marqueeActive = false; }, 50);
+    }
+  };
+
+  doc.addEventListener('mousemove', onMove, true);
+  doc.addEventListener('mouseup', onUp, true);
+}
+
+function updateMarqueeRect(x1, y1, x2, y2) {
+  const stageRect = stageEl.getBoundingClientRect();
+  const frameRect = previewEl.getBoundingClientRect();
+  const offsetX = frameRect.left - stageRect.left;
+  const offsetY = frameRect.top - stageRect.top;
+  const r = computeRect(x1, y1, x2, y2);
+  marqueeEl.style.display = 'block';
+  marqueeEl.style.left = (r.left + offsetX) + 'px';
+  marqueeEl.style.top = (r.top + offsetY) + 'px';
+  marqueeEl.style.width = r.width + 'px';
+  marqueeEl.style.height = r.height + 'px';
+}
+
+function computeRect(x1, y1, x2, y2) {
+  return {
+    left: Math.min(x1, x2), top: Math.min(y1, y2),
+    right: Math.max(x1, x2), bottom: Math.max(y1, y2),
+    width: Math.abs(x2 - x1), height: Math.abs(y2 - y1)
+  };
+}
+
+function elementsInRect(doc, rect) {
+  const candidates = doc.querySelectorAll('div, section, article, header, footer, aside, nav, h1,h2,h3,h4,h5,h6, p, ul, ol, li, table, figure, blockquote, img, button');
+  const hits = [];
+  for (const el of candidates) {
+    if (isLocked(el)) continue;
+    const r = el.getBoundingClientRect();
+    if (r.width < 8 || r.height < 8) continue;
+    if (r.right < rect.left || r.left > rect.right || r.bottom < rect.top || r.top > rect.bottom) continue;
+    hits.push(el);
+  }
+  // 移除被祖先包含的子元素
+  const filtered = hits.filter(el => !hits.some(other => other !== el && other.contains(el)));
+  return filtered;
+}
+
+function mergeSel(a, b) {
+  const result = [...a];
+  for (const el of b) if (!result.includes(el)) result.push(el);
+  return result;
+}
+
+// ---------- iframe 事件 ----------
+function bindIframeEvents() {
+  const doc = getDoc();
+  if (!doc) return;
+
+  // hover
+  doc.addEventListener('mousemove', e => {
+    if (state.marqueeActive || state.editingEl) return;
+    const el = getElementAtPoint(doc, e.clientX, e.clientY);
+    if (!el || isLocked(el)) {
+      if (state.hovered) { state.hovered = null; refreshVisualMarks(); }
+      return;
+    }
+    if (state.hovered !== el) {
+      state.hovered = el;
+      refreshVisualMarks();
+    }
+  });
+
+  doc.addEventListener('mouseleave', () => {
+    state.hovered = null;
+    refreshVisualMarks();
+  });
+
+  // mousedown: 决定是开始框选还是准备点选
+  doc.addEventListener('mousedown', e => {
+    if (e.button !== 0) return;
+    if (state.editingEl) return; // 编辑状态不拦截
+    const el = getElementAtPoint(doc, e.clientX, e.clientY);
+    // 始终允许框选：按下 → 5px 内不动算 click，超过算框选
+    startMarquee(e.clientX, e.clientY, doc, e.shiftKey);
+  }, true);
+
+  // click（单选 / 深度切换）
+  doc.addEventListener('click', e => {
+    if (state.marqueeActive || state.editingEl) return;
+    e.preventDefault();
+    e.stopPropagation();
+
+    const el = getElementAtPoint(doc, e.clientX, e.clientY);
+    if (!el || isLocked(el)) return;
+
+    if (e.shiftKey) {
+      // 加减选择
+      const idx = state.selected.indexOf(el);
+      if (idx >= 0) state.selected.splice(idx, 1);
+      else state.selected.push(el);
+    } else if (e.altKey) {
+      // Alt+点击：进入更深一层（即默认行为，因为 elementFromPoint 本身返回最深；这里让它"进入下一个子元素"）
+      // 如果当前已经选中并被点击的就是它，则选它最浅的子元素中包含点击点的
+      const target = state.selected[0];
+      if (target && (target === el || target.contains(el))) {
+        // 找 target 直接子元素中包含点击位置的那个
+        const child = Array.from(target.children).find(c => {
+          const r = c.getBoundingClientRect();
+          return e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom;
+        });
+        state.selected = [child || el];
+      } else {
+        state.selected = [el];
+      }
+    } else {
+      // 普通点击：循环深度
+      // 如果点了同一区域且当前已经有选中，则切换到"祖先"（向外扩大）
+      if (state.selected.length === 1 && (state.selected[0] === el || state.selected[0].contains(el) || el.contains(state.selected[0]))) {
+        // 与上次重叠 → 向外扩
+        const parent = state.selected[0].parentElement;
+        if (parent && parent.tagName.toLowerCase() !== 'body') {
+          state.selected = [parent];
+        } else {
+          state.selected = [el]; // 已到顶，重置回最深
+        }
+      } else {
+        state.selected = [el];
+      }
+    }
+    refreshVisualMarks();
+    updateSelectionPanel();
+    renderOutline();
+  }, true);
+
+  // dblclick: 进入编辑文字状态
+  doc.addEventListener('dblclick', e => {
+    if (state.marqueeActive) return;
+    const el = getElementAtPoint(doc, e.clientX, e.clientY);
+    if (!el || isLocked(el)) return;
+    e.preventDefault();
+    e.stopPropagation();
+    startEditing(el);
+  }, true);
+
+  // Esc 取消
+  doc.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+      if (state.editingEl) { cancelEditing(); return; }
+      state.selected = [];
+      refreshVisualMarks();
+      updateSelectionPanel();
+      renderOutline();
+    }
+  });
+
+  // 滚动时浮动工具栏跟随
+  doc.addEventListener('scroll', () => positionFloatToolbar(), true);
+  previewEl.contentWindow?.addEventListener('scroll', () => positionFloatToolbar(), true);
+}
+
+// ---------- a: 双击改文字 ----------
+function startEditing(el) {
+  if (state.editingEl === el) return;
+  finishEditing();
+  state.editingEl = el;
+  el.setAttribute(EDIT_ATTR, '1');
+  el.setAttribute('contenteditable', 'true');
+  // 选中其全部文字方便覆盖输入
+  const range = getDoc().createRange();
+  range.selectNodeContents(el);
+  const sel = getDoc().getSelection();
+  sel.removeAllRanges();
+  sel.addRange(range);
+  el.focus();
+
+  const beforeHtml = el.outerHTML;
+
+  const finish = (save) => {
+    if (state.editingEl !== el) return;
+    el.removeAttribute('contenteditable');
+    el.removeAttribute(EDIT_ATTR);
+    state.editingEl = null;
+    el.removeEventListener('blur', onBlur);
+    el.removeEventListener('keydown', onKey);
+    if (save && el.outerHTML !== beforeHtml) {
+      pushHistory('修改文字：' + truncate(el.textContent.trim(), 24));
+      saveDraft();
+    }
+    refreshVisualMarks();
+  };
+
+  const onBlur = () => finish(true);
+  const onKey = ev => {
+    if (ev.key === 'Escape') { ev.preventDefault(); ev.stopPropagation(); finish(false); }
+    else if (ev.key === 'Enter' && !ev.shiftKey && el.tagName.match(/^H[1-6]$|^P$|^SPAN$|^A$|^BUTTON$|^LI$|^TD$/i)) {
+      ev.preventDefault();
+      el.blur();
+    }
+  };
+  el.addEventListener('blur', onBlur);
+  el.addEventListener('keydown', onKey);
+}
+
+function finishEditing() {
+  if (!state.editingEl) return;
+  const el = state.editingEl;
+  el.removeAttribute('contenteditable');
+  el.removeAttribute(EDIT_ATTR);
+  el.blur && el.blur();
+  state.editingEl = null;
+}
+
+function cancelEditing() {
+  if (!state.editingEl) return;
+  // Simply finish without saving; undo would handle it
+  finishEditing();
+  refreshVisualMarks();
+}
+
+// ---------- c: 浮动工具栏（位置+动作） ----------
+function positionFloatToolbar() {
+  if (state.selected.length !== 1 || state.editingEl) {
+    hideFloatToolbar();
+    return;
+  }
+  const el = state.selected[0];
+  const stageRect = stageEl.getBoundingClientRect();
+  const frameRect = previewEl.getBoundingClientRect();
+  const elRect = el.getBoundingClientRect();
+  // elRect 是 iframe 内坐标 → 转 stage 坐标
+  const x = (frameRect.left - stageRect.left) + elRect.left;
+  let y = (frameRect.top - stageRect.top) + elRect.top - 34;
+  if (y < 4) y = (frameRect.top - stageRect.top) + elRect.bottom + 6;
+  floatToolbar.style.left = Math.max(4, Math.min(x, stageRect.width - 280)) + 'px';
+  floatToolbar.style.top = y + 'px';
+  floatToolbar.classList.add('show');
+  // 锁定状态切换按钮文字
+  const lockBtn = floatToolbar.querySelector('[data-act="lock"]');
+  if (lockBtn) lockBtn.textContent = el.hasAttribute(LOCK_ATTR) ? '🔓' : '🔒';
+}
+
+function hideFloatToolbar() { floatToolbar.classList.remove('show'); }
+
+floatToolbar.addEventListener('click', e => {
+  const btn = e.target.closest('.ft-btn');
+  if (!btn) return;
+  const act = btn.dataset.act;
+  if (state.selected.length !== 1) return;
+  const el = state.selected[0];
+
+  if (act === 'up' || act === 'down') {
+    const parent = el.parentElement;
+    if (!parent) return;
+    if (act === 'up') {
+      const prev = el.previousElementSibling;
+      if (prev) parent.insertBefore(el, prev);
+      else return toast('已经是第一个', 'info');
+    } else {
+      const next = el.nextElementSibling;
+      if (next) parent.insertBefore(el, next.nextElementSibling);
+      else return toast('已经是最后一个', 'info');
+    }
+    pushHistory(act === 'up' ? '上移元素' : '下移元素');
+    refreshVisualMarks();
+    renderOutline();
+    saveDraft();
+  } else if (act === 'edit') {
+    startEditing(el);
+  } else if (act === 'dup') {
+    const clone = el.cloneNode(true);
+    el.parentNode.insertBefore(clone, el.nextElementSibling);
+    state.selected = [clone];
+    pushHistory('复制元素');
+    refreshVisualMarks();
+    updateSelectionPanel();
+    renderOutline();
+    saveDraft();
+  } else if (act === 'lock') {
+    if (el.hasAttribute(LOCK_ATTR)) {
+      el.removeAttribute(LOCK_ATTR);
+      toast('已解锁', 'info');
+    } else {
+      el.setAttribute(LOCK_ATTR, '1');
+      toast('已锁定，AI 不会再动它', 'info');
+    }
+    pushHistory(el.hasAttribute(LOCK_ATTR) ? '锁定元素' : '解锁元素');
+    refreshVisualMarks();
+    renderOutline();
+  } else if (act === 'copy') {
+    navigator.clipboard.writeText(el.outerHTML).then(() => toast('已复制 HTML', 'success'));
+  } else if (act === 'del') {
+    el.parentNode.removeChild(el);
+    state.selected = [];
+    pushHistory('删除元素');
+    refreshVisualMarks();
+    updateSelectionPanel();
+    renderOutline();
+    saveDraft();
+  }
+});
+
+// ---------- 选择面板 ----------
+function updateSelectionPanel() {
+  const summary = $('#selSummary');
+  const crumb = $('#crumb');
+  const tip = $('#selTip');
+
+  if (state.selected.length === 0) {
+    summary.innerHTML = '<span class="sel-empty">点击预览中的元素来锚定；Alt+点击进入更小的子元素；按住空白拖矩形可框选多个</span>';
+    crumb.innerHTML = '';
+    tip.textContent = '';
+    hideFloatToolbar();
+    return;
+  }
+
+  if (state.selected.length === 1) {
+    const el = state.selected[0];
+    summary.innerHTML = `已选中 <b>1 个元素</b>：${describeEl(el)}${el.hasAttribute(LOCK_ATTR) ? ' <span style="color:var(--k-orange)">🔒 已锁定</span>' : ''}`;
+    crumb.innerHTML = renderCrumb(el);
+    bindCrumb();
+    tip.innerHTML = '💡 <b>同点再点</b>=扩大到父级 · <b>Alt+点</b>=进入子级 · <b>双击</b>=改文字 · <b>Shift+点</b>=加减 · 拖空白=框选';
+  } else {
+    summary.innerHTML = `已选中 <b>${state.selected.length} 个元素</b>：` +
+      state.selected.slice(0, 3).map(describeEl).join('，') +
+      (state.selected.length > 3 ? ` 等 ${state.selected.length} 个` : '');
+    crumb.innerHTML = '';
+    tip.textContent = 'AI 会一次性整体改写这些元素 · ESC 清空选择';
+  }
+  positionFloatToolbar();
+}
+
+function describeEl(el) {
+  const tag = el.tagName.toLowerCase();
+  let id = el.id ? `#${el.id}` : '';
+  let cls = '';
+  if (el.className && typeof el.className === 'string') {
+    const c = el.className.trim().split(/\s+/).filter(x => !x.startsWith('__hm_'));
+    if (c.length) cls = '.' + c.slice(0, 2).join('.');
+  }
+  return `<code class="k-code">${tag}${id}${cls}</code>`;
+}
+
+function renderCrumb(el) {
+  const path = getAncestorChain(el);
+  return path.map((p, i) => {
+    const isCurrent = (p === el);
+    const tag = p.tagName.toLowerCase();
+    let id = p.id ? '#' + p.id : '';
+    let cls = '';
+    if (p.className && typeof p.className === 'string') {
+      const c = p.className.trim().split(/\s+/).filter(x => !x.startsWith('__hm_'));
+      if (c.length) cls = '.' + c.slice(0, 1).join('.');
+    }
+    return `<span class="crumb-item ${isCurrent ? 'current' : ''}" data-i="${i}">${tag}${id}${cls}</span>`;
+  }).join('');
+}
+
+function bindCrumb() {
+  document.querySelectorAll('.crumb-item').forEach(item => {
+    item.addEventListener('click', () => {
+      if (state.selected.length !== 1) return;
+      const path = getAncestorChain(state.selected[0]);
+      const idx = parseInt(item.dataset.i, 10);
+      state.selected = [path[idx]];
+      refreshVisualMarks();
+      updateSelectionPanel();
+      renderOutline();
+    });
+  });
+}
+
+// ---------- g: 大纲树 ----------
+function nodePath(el) {
+  // 用元素自身在 DOM 中的位置作为 key
+  const chain = getAncestorChain(el);
+  return chain.map(n => n.tagName.toLowerCase() + ':' + Array.from(n.parentElement?.children || []).indexOf(n)).join('>');
+}
+
+function renderOutline() {
+  const body = $('#outlineBody');
+  const doc = getDoc();
+  if (!doc || !doc.body) {
+    body.innerHTML = '<div style="color:var(--k-ink-4);font-size:11px;padding:8px">加载 HTML 后显示元素树</div>';
+    return;
+  }
+  const lines = [];
+  function walk(el, depth) {
+    if (!el || el.nodeType !== 1) return;
+    const tag = el.tagName.toLowerCase();
+    if (SKIP_TAGS.has(tag) && tag !== 'body') return;
+    if (tag === 'body') {
+      Array.from(el.children).forEach(c => walk(c, 0));
+      return;
+    }
+    const id = el.id ? `<span class="tag-id">#${escapeHtml(el.id)}</span>` : '';
+    let cls = '';
+    if (el.className && typeof el.className === 'string') {
+      const c = el.className.trim().split(/\s+/).filter(x => !x.startsWith('__hm_'));
+      if (c.length) cls = `<span class="tag-cls">.${escapeHtml(c[0])}${c.length > 1 ? '+' + (c.length - 1) : ''}</span>`;
+    }
+    const text = (el.children.length === 0 && el.textContent) ? `<span class="tree-text">"${escapeHtml(truncate(el.textContent.trim(), 14))}"</span>` : '';
+    const hasChildren = Array.from(el.children).some(c => !SKIP_TAGS.has(c.tagName.toLowerCase()));
+    const pathKey = nodePath(el);
+    const isCollapsed = state.collapsed.has(pathKey);
+    const isSelected = state.selected.includes(el);
+    const locked = el.hasAttribute(LOCK_ATTR);
+    const toggle = hasChildren ? (isCollapsed ? '▸' : '▾') : '';
+    lines.push(`<div class="tree-node ${isSelected ? 'sel' : ''} ${locked ? 'locked' : ''}" data-path="${pathKey}" style="padding-left:${depth * 12}px" title="${tag}${el.id ? '#' + el.id : ''}">
+      <span class="tree-toggle ${hasChildren ? '' : 'empty'}" data-toggle="${pathKey}">${toggle}</span>
+      <span class="tag-name">${tag}</span>${id}${cls}${text}${locked ? '<span class="tree-lock">🔒</span>' : ''}
+    </div>`);
+    if (hasChildren && !isCollapsed) {
+      Array.from(el.children).forEach(c => walk(c, depth + 1));
+    }
+  }
+  walk(doc.body, 0);
+  body.innerHTML = lines.join('') || '<div style="color:var(--k-ink-4);font-size:11px;padding:8px">页面为空</div>';
+
+  // 绑定
+  body.querySelectorAll('.tree-node').forEach(node => {
+    const path = node.dataset.path;
+    node.addEventListener('click', e => {
+      if (e.target.dataset.toggle !== undefined) {
+        if (state.collapsed.has(path)) state.collapsed.delete(path);
+        else state.collapsed.add(path);
+        renderOutline();
+        return;
+      }
+      const el = findByPath(path);
+      if (el) {
+        state.selected = e.shiftKey ? mergeSel(state.selected, [el]) : [el];
+        refreshVisualMarks();
+        updateSelectionPanel();
+        renderOutline();
+        el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      }
+    });
+    node.addEventListener('mouseenter', () => {
+      const el = findByPath(path);
+      if (el && !state.editingEl) {
+        state.hovered = el;
+        refreshVisualMarks();
+      }
+    });
+    node.addEventListener('mouseleave', () => {
+      state.hovered = null;
+      refreshVisualMarks();
+    });
+  });
+}
+
+function findByPath(pathKey) {
+  const doc = getDoc();
+  if (!doc || !doc.body) return null;
+  const segs = pathKey.split('>');
+  let cur = doc.body;
+  for (const seg of segs) {
+    const [tag, idxStr] = seg.split(':');
+    const idx = parseInt(idxStr, 10);
+    const children = Array.from(cur.children);
+    if (!children[idx]) return null;
+    cur = children[idx];
+  }
+  return cur;
+}
+
+// ---------- 历史 ----------
+function pushHistory(label) {
+  const html = getCurrentHtml();
+  state.history = state.history.slice(0, state.hIndex + 1);
+  state.history.push({ html, label, time: now() });
+  if (state.history.length > 50) {
+    state.history.shift();
+  } else {
+    state.hIndex++;
+  }
+  updateUndoRedoButtons();
+  renderHistory();
+  saveDraft();
+}
+
+function gotoHistory(index) {
+  if (index < 0 || index >= state.history.length) return;
+  state.hIndex = index;
+  loadHtml(state.history[index].html, { resetHistory: false });
+  updateUndoRedoButtons();
+  renderHistory();
+}
+
+function undo() { if (state.hIndex > 0) gotoHistory(state.hIndex - 1); }
+function redo() { if (state.hIndex < state.history.length - 1) gotoHistory(state.hIndex + 1); }
+
+function updateUndoRedoButtons() {
+  $('#btnUndo').disabled = state.hIndex <= 0;
+  $('#btnRedo').disabled = state.hIndex >= state.history.length - 1;
+}
+
+function renderHistory() {
+  const list = $('#historyList');
+  if (!state.history.length) {
+    list.innerHTML = '<div class="history-empty">暂无修改</div>';
+    return;
+  }
+  list.innerHTML = state.history.map((h, i) => `
+    <div class="history-item ${i === state.hIndex ? 'current' : ''}" data-i="${i}">
+      <span class="h-text">${i === 0 ? '📄 ' : '✏️ '}${escapeHtml(h.label)}</span>
+      <span class="h-time">${formatTime(h.time)}</span>
+    </div>
+  `).join('');
+  list.querySelectorAll('.history-item').forEach(item => {
+    item.addEventListener('click', () => gotoHistory(parseInt(item.dataset.i, 10)));
+  });
+}
+
+function now() { return Date.now(); }
+function formatTime(t) {
+  const d = new Date(t);
+  return d.getHours().toString().padStart(2, '0') + ':' + d.getMinutes().toString().padStart(2, '0') + ':' + d.getSeconds().toString().padStart(2, '0');
+}
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function truncate(s, n) { s = String(s).replace(/\s+/g, ' '); return s.length > n ? s.slice(0, n) + '…' : s; }
+
+// ---------- j: 自动保存草稿 ----------
+let saveDraftTimer = null;
+function saveDraft() {
+  clearTimeout(saveDraftTimer);
+  saveDraftTimer = setTimeout(() => {
+    try {
+      const html = state.history[state.hIndex]?.html || '';
+      if (!html) return;
+      const draft = {
+        filename: state.filename,
+        html,
+        time: now()
+      };
+      // 草稿可能很大，超过 4MB 就放弃
+      const str = JSON.stringify(draft);
+      if (str.length > 4 * 1024 * 1024) return;
+      localStorage.setItem(DRAFT_KEY, str);
+    } catch (e) { /* quota exceeded etc */ }
+  }, 500);
+}
+
+function checkDraftOnStart() {
+  try {
+    const raw = localStorage.getItem(DRAFT_KEY);
+    if (!raw) return;
+    const draft = JSON.parse(raw);
+    if (!draft.html) return;
+    const ago = Math.round((now() - draft.time) / 1000);
+    const timeText = ago < 60 ? `${ago} 秒前` : ago < 3600 ? `${Math.round(ago / 60)} 分钟前` : `${Math.round(ago / 3600)} 小时前`;
+    $('#restoreMsg').textContent = `检测到上次的草稿（${escapeHtml(draft.filename)}，${timeText}）`;
+    $('#restoreBar').classList.add('show');
+    $('#btnRestore').onclick = () => {
+      state.filename = draft.filename;
+      loadHtml(draft.html, { label: '恢复的草稿' });
+      $('#restoreBar').classList.remove('show');
+      toast('已恢复草稿', 'success');
+    };
+    $('#btnRestoreDismiss').onclick = () => {
+      $('#restoreBar').classList.remove('show');
+    };
+  } catch {}
+}
+
+// ---------- AI 调用 ----------
+async function callLLM(messages, signal) {
+  const cfg = getCfg();
+  if (!cfg.base || !cfg.key || !cfg.model) {
+    throw new Error('请先在「设置」里填 Base URL、API Key、Model');
+  }
+  let base = cfg.base.trim().replace(/\/+$/, '');
+  const url = base.endsWith('/chat/completions') ? base : base + '/chat/completions';
+  const headers = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${cfg.key}` };
+  if (cfg.headers) {
+    try { Object.assign(headers, JSON.parse(cfg.headers)); } catch {}
+  }
+  const resp = await fetch(url, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ model: cfg.model, messages, temperature: 0.2, stream: false }),
+    signal
+  });
+  if (!resp.ok) {
+    const text = await resp.text().catch(() => '');
+    throw new Error(`API 返回 ${resp.status}：${text.slice(0, 200)}`);
+  }
+  const data = await resp.json();
+  const content = data?.choices?.[0]?.message?.content;
+  if (!content) throw new Error('API 返回数据格式异常');
+  return content;
+}
+
+// ---------- AI 调用状态 ----------
+function startAI(text) {
+  state.aiBusy = true;
+  state.aiAbort = new AbortController();
+  showLoading(text || 'AI 处理中...');
+  const btnApply = $('#btnApply');
+  const btnAbort = $('#btnAbort');
+  if (btnApply) btnApply.disabled = true;
+  if (btnAbort) btnAbort.disabled = false;
+}
+function endAI() {
+  state.aiBusy = false;
+  state.aiAbort = null;
+  hideLoading();
+  const btnApply = $('#btnApply');
+  const btnAbort = $('#btnAbort');
+  if (btnApply) btnApply.disabled = false;
+  if (btnAbort) btnAbort.disabled = true;
+}
+function abortAI() {
+  if (state.aiAbort) {
+    try { state.aiAbort.abort(); } catch {}
+    toast('已暂停本次 AI 调用', 'info');
+  }
+  endAI();
+}
+function isAbortError(e) {
+  const msg = String(e?.message || e || '');
+  return e?.name === 'AbortError' || /aborted|abort/i.test(msg);
+}
+
+// ---------- N1: AI 二阶段（先意图判定 → 改写） ----------
+async function applyAIRewrite() {
+  if (state.selected.length === 0) {
+    toast('请先在预览区点选要改的元素', 'error');
+    return;
+  }
+  // 过滤锁定
+  const targets = state.selected.filter(el => !isLocked(el));
+  if (targets.length === 0) {
+    toast('选中的元素被锁定了，先解锁再改', 'error');
+    return;
+  }
+
+  const prompt = $('#promptInput').value.trim();
+  if (!prompt) {
+    toast('请输入修改指令', 'error');
+    return;
+  }
+
+  hideClarify();
+  await runRewriteFlow({
+    targets,
+    instruction: prompt,
+    clarifications: [] // 之前的澄清记录
+  });
+}
+
+async function runRewriteFlow(ctx) {
+  startAI('Knack 正在理解你的意图...');
+
+  // 阶段 1：意图判定
+  const elements = ctx.targets.map((el, i) => ({
+    id: i,
+    tag: el.tagName.toLowerCase(),
+    classes: (el.className && typeof el.className === 'string')
+      ? el.className.trim().split(/\s+/).filter(x => !x.startsWith('__hm_')).slice(0, 5).join(' ')
+      : '',
+    text_preview: truncate(el.textContent || '', 80),
+    html_preview: truncate(el.outerHTML, 200)
+  }));
+
+  const sysJudge = `You are an HTML editor assistant. The user has selected one or more HTML elements and given an instruction. Your job is to:
+1. Decide if the instruction is clear enough to execute directly, OR if you need clarification.
+2. If clear → respond JSON: {"action":"execute"}
+3. If ambiguous but you can guess 2-4 reasonable interpretations → respond JSON: {"action":"options", "question":"<question in Chinese>", "options":[{"key":"a","label":"<Chinese label>","detail":"<one-line Chinese hint>"}, ...]}
+4. If too vague to even enumerate options → respond JSON: {"action":"ask", "question":"<one short Chinese question to user>"}
+
+RULES:
+- Output ONLY JSON, no markdown fence, no commentary.
+- Question in Chinese. Options labels also in Chinese.
+- Prefer "execute" when instruction has clear verb+object (e.g., "改成圆形", "字号放大一倍", "背景改深蓝", "删除").
+- Prefer "options" when instruction is generic (e.g., "改大一点" → 字号大 / 元素本身大 / 内容区大；"换个风格" → 几种风格选项).
+- Prefer "ask" when missing essential info that can't be guessed (e.g., user says "改成那种感觉" without reference).
+- Consider previous clarifications below — if user has already clarified, treat as "execute".`;
+
+  const judgeUser = `User instruction: ${ctx.instruction}
+
+Selected elements:
+${JSON.stringify(elements, null, 2)}
+
+${ctx.clarifications.length ? 'Previous clarifications:\n' + ctx.clarifications.map(c => `- ${c}`).join('\n') : ''}
+
+Respond with JSON only.`;
+
+  let judge;
+  try {
+    const out = await callLLM([
+      { role: 'system', content: sysJudge },
+      { role: 'user', content: judgeUser }
+    ], state.aiAbort?.signal);
+    judge = parseJSON(out);
+  } catch (e) {
+    endAI();
+    if (isAbortError(e)) return;
+    toast(formatAIError(e), 'error');
+    return;
+  }
+
+  // 处理判定结果
+  if (judge.action === 'options' || judge.action === 'ask') {
+    endAI();
+    showClarify(judge, ctx);
+    return;
+  }
+
+  // execute
+  await executeRewrite(ctx);
+}
+
+async function executeRewrite(ctx) {
+  if (!state.aiBusy) startAI('Knack 正在改写...');
+  else $('#loadingText').textContent = 'Knack 正在改写...';
+
+  const elements = ctx.targets.map((el, i) => ({
+    id: i,
+    html: el.outerHTML
+  }));
+
+  const fullInstruction = ctx.instruction + (ctx.clarifications.length
+    ? '\n\n用户后续澄清：\n' + ctx.clarifications.map(c => `- ${c}`).join('\n')
+    : '');
+
+  const sys = `You are an expert HTML/CSS editor. Rewrite the given HTML element(s) per the user's instruction.
+
+OUTPUT FORMAT:
+- Output ONLY a JSON array, no markdown fence, no commentary.
+- Shape: [{"id":<int>, "html":"<new outerHTML>"}], one entry per input id.
+- For deletion: {"id":<int>, "html":""}
+
+RULES:
+- Keep semantic structure unless instruction requests structural change.
+- Inline styles or new <style> rules inside the element are OK; do NOT add external dependencies.
+- Preserve text content unless explicitly asked to change.
+- Do not wrap output in code fences.
+
+JSON ESCAPING (CRITICAL):
+- The "html" string MUST be valid JSON. Every " inside HTML attributes MUST be escaped as \\".
+- Every newline inside the html MUST be escaped as \\n (do not put real line breaks inside the JSON string).
+- Every backslash MUST be escaped as \\\\.
+- For SVG: write attributes like viewBox=\\"0 0 24 24\\" inside the JSON string.
+- Correct example: [{"id":0,"html":"<div class=\\"box\\"><svg viewBox=\\"0 0 24 24\\"><path d=\\"M1 1\\"/></svg></div>"}]`;
+
+  const userMsg = `Instruction (Chinese, follow exactly): ${fullInstruction}
+
+Selected element(s):
+${JSON.stringify(elements, null, 2)}
+
+Return JSON array now.`;
+
+  try {
+    const out = await callLLM([
+      { role: 'system', content: sys },
+      { role: 'user', content: userMsg }
+    ], state.aiAbort?.signal);
+    const parsed = parseJSON(out);
+    if (!Array.isArray(parsed)) throw new Error('AI 返回不是数组');
+
+    const doc = getDoc();
+    clearVisualMarks(doc);
+
+    const newSelected = [];
+    for (const item of parsed) {
+      const target = ctx.targets[item.id];
+      if (!target || !target.parentNode) continue;
+      if (item.html === '' || item.html == null) {
+        target.parentNode.removeChild(target);
+        continue;
+      }
+      const wrapper = doc.createElement('div');
+      wrapper.innerHTML = item.html.trim();
+      const newNode = wrapper.firstElementChild;
+      if (!newNode) continue;
+      target.parentNode.replaceChild(newNode, target);
+      newSelected.push(newNode);
+    }
+
+    state.selected = newSelected;
+    refreshVisualMarks();
+    updateSelectionPanel();
+    renderOutline();
+    pushHistory(truncate(ctx.instruction, 30));
+    toast('改写完成', 'success');
+    $('#promptInput').value = '';
+    hideClarify();
+  } catch (e) {
+    if (!isAbortError(e)) {
+      const friendly = formatAIError(e);
+      toast(friendly, 'error');
+      console.error('AI rewrite error:', e);
+    }
+  } finally {
+    endAI();
+  }
+}
+
+function showClarify(judge, ctx) {
+  state.pendingRewrite = ctx;
+  const panel = $('#clarifyPanel');
+  $('#clarifyText').textContent = judge.question || '请补充一下';
+  const optsEl = $('#clarifyOptions');
+  const replyEl = $('#clarifyReply');
+
+  if (judge.action === 'options' && Array.isArray(judge.options)) {
+    optsEl.innerHTML = judge.options.map(opt => `
+      <button class="clarify-option" data-key="${escapeHtml(opt.key || '')}" data-label="${escapeHtml(opt.label || '')}" data-detail="${escapeHtml(opt.detail || '')}">
+        <b>${escapeHtml(opt.label || '')}</b>${opt.detail ? `<br><span style="color:var(--k-ink-3);font-size:11px">${escapeHtml(opt.detail)}</span>` : ''}
+      </button>
+    `).join('') + `
+      <button class="clarify-option other" data-key="__other__">
+        以上都不是 / 我自己说
+      </button>
+    `;
+    optsEl.style.display = 'flex';
+    replyEl.classList.remove('show');
+
+    optsEl.querySelectorAll('.clarify-option').forEach(btn => {
+      btn.onclick = () => {
+        if (btn.dataset.key === '__other__') {
+          optsEl.style.display = 'none';
+          replyEl.classList.add('show');
+          $('#clarifyReplyInput').focus();
+          return;
+        }
+        const clar = `选择：${btn.dataset.label}${btn.dataset.detail ? `（${btn.dataset.detail}）` : ''}`;
+        ctx.clarifications.push(clar);
+        hideClarify();
+        executeRewrite(ctx);
+      };
+    });
+  } else {
+    // ask
+    optsEl.style.display = 'none';
+    replyEl.classList.add('show');
+    $('#clarifyReplyInput').focus();
+  }
+
+  panel.classList.add('show');
+}
+
+function hideClarify() {
+  $('#clarifyPanel').classList.remove('show');
+  $('#clarifyReply').classList.remove('show');
+  state.pendingRewrite = null;
+}
+
+$('#btnClarifySend').addEventListener('click', () => {
+  const reply = $('#clarifyReplyInput').value.trim();
+  if (!reply) { toast('请输入补充说明', 'error'); return; }
+  const ctx = state.pendingRewrite;
+  if (!ctx) return;
+  ctx.clarifications.push(reply);
+  $('#clarifyReplyInput').value = '';
+  hideClarify();
+  // 进入下一轮判定（带上澄清记录）
+  runRewriteFlow(ctx);
+});
+
+$('#clarifyReplyInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') { e.preventDefault(); $('#btnClarifySend').click(); }
+});
+
+$('#btnClarifyCancel').addEventListener('click', () => {
+  hideClarify();
+  toast('已取消本次修改', 'info');
+});
+
+function parseJSON(text) {
+  // 见下方实现
+  let t = text.trim();
+  t = t.replace(/^```(?:json)?\s*/i, '').replace(/```$/, '').trim();
+  // 尝试提取首个 { 到末 } 或 [ 到末 ]
+  const objStart = t.indexOf('{'), objEnd = t.lastIndexOf('}');
+  const arrStart = t.indexOf('['), arrEnd = t.lastIndexOf(']');
+  let candidate = t;
+  if (arrStart >= 0 && arrEnd > arrStart && (arrStart < objStart || objStart < 0)) {
+    candidate = t.slice(arrStart, arrEnd + 1);
+  } else if (objStart >= 0 && objEnd > objStart) {
+    candidate = t.slice(objStart, objEnd + 1);
+  }
+  // 第一次尝试直接解析
+  try { return JSON.parse(candidate); } catch (e1) {
+    // 第一道修复：把 JSON 字符串里真实换行/制表符 转义
+    let fixed = candidate
+      .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '')
+      .replace(/\r\n?/g, '\n');
+    try { return JSON.parse(fixed); } catch (e2) {}
+    // 第二道修复：尝试在 "html":"..." 这种字段里转义内嵌的未转义双引号
+    // 思路：找出所有 "html":"..." 的值范围，把里面除已转义外的 " 替换成 \"
+    try {
+      const repaired = repairJsonStrings(fixed);
+      return JSON.parse(repaired);
+    } catch (e3) {
+      const preview = candidate.slice(Math.max(0, e1.message.match(/position (\d+)/)?.[1] - 60 || 0), (parseInt(e1.message.match(/position (\d+)/)?.[1] || '0') + 60));
+      const err = new Error(`AI 返回的 JSON 解析失败：${e1.message}\n附近内容：…${preview}…`);
+      throw err;
+    }
+  }
+}
+
+/**
+ * 修复 JSON 字符串值中未转义的双引号。
+ * 适用于 LLM 返回类似 [{"id":0,"html":"<svg viewBox="0 0 24 24"></svg>"}] 这种坏 JSON。
+ * 仅对 "html" / "label" / "detail" / "question" 等已知字段做修复，避免破坏结构。
+ */
+function repairJsonStrings(text) {
+  const fieldNames = ['html', 'label', 'detail', 'question', 'text', 'content'];
+  let out = text;
+  for (const name of fieldNames) {
+    const re = new RegExp(`"${name}"\\s*:\\s*"`, 'g');
+    let result = '';
+    let lastEnd = 0;
+    let m;
+    while ((m = re.exec(out)) !== null) {
+      const valueStart = m.index + m[0].length;
+      const fixedValue = scanAndEscape(out, valueStart);
+      result += out.slice(lastEnd, valueStart) + fixedValue.value + '"';
+      lastEnd = fixedValue.end + 1; // skip closing "
+    }
+    if (lastEnd > 0) {
+      result += out.slice(lastEnd);
+      out = result;
+    }
+  }
+  return out;
+}
+
+/**
+ * 从字符串 start 位置开始扫描，直到遇到"真正"的字符串结束符。
+ * "真正"的判断：后面紧跟 ,/}/] 或 \n + 空白 + ,/}/]，且当前 " 不是被反斜杠转义的。
+ * 中间遇到的所有未转义 " 全部转成 \"。
+ */
+function scanAndEscape(text, start) {
+  let i = start;
+  let buf = '';
+  while (i < text.length) {
+    const ch = text[i];
+    if (ch === '\\') {
+      buf += ch + (text[i + 1] || '');
+      i += 2;
+      continue;
+    }
+    if (ch === '"') {
+      // 看看后面是不是真正的结束（,  }  ]）
+      let j = i + 1;
+      while (j < text.length && /\s/.test(text[j])) j++;
+      const next = text[j];
+      if (next === ',' || next === '}' || next === ']' || j >= text.length) {
+        return { value: buf, end: i };
+      }
+      // 否则是字符串内部的未转义引号
+      buf += '\\"';
+      i++;
+      continue;
+    }
+    if (ch === '\n') { buf += '\\n'; i++; continue; }
+    if (ch === '\t') { buf += '\\t'; i++; continue; }
+    buf += ch;
+    i++;
+  }
+  return { value: buf, end: text.length - 1 };
+}
+
+function showLoading(txt) {
+  $('#loadingText').textContent = txt;
+  $('#loading').style.display = 'flex';
+}
+function hideLoading() { $('#loading').style.display = 'none'; }
+
+/**
+ * 把 AI 错误转成对普通用户友好的提示。
+ * 输入字符过长会截断，并对常见情况（JSON解析失败、API 4xx/5xx）给出具体建议。
+ */
+function formatAIError(e) {
+  const msg = String(e?.message || e || '');
+  if (/JSON\s*解析失败|Expected\s.*JSON|Unexpected token.*JSON|after property value in JSON/i.test(msg)) {
+    return 'AI 返回的格式有错（含特殊字符没正确转义）。请点「发送给 AI 改写」重试一次，或拆成更小的改动';
+  }
+  if (/API 返回 401|401/.test(msg)) return 'API Key 无效或过期，请在「设置」里检查';
+  if (/API 返回 403|403/.test(msg)) return 'API 拒绝访问（403），可能是权限或额度问题';
+  if (/API 返回 404|404/.test(msg)) return 'API 路径找不到（404），请检查设置中的 Base URL 是否填到 /v1 这一级';
+  if (/API 返回 429|429/.test(msg)) return '调用过于频繁或额度不足（429），稍后再试';
+  if (/API 返回 5\d\d/.test(msg)) return '服务端临时故障（5xx），稍后重试';
+  if (/Failed to fetch|NetworkError|network/i.test(msg)) return '网络请求失败，检查 VPN/网络/Base URL';
+  if (msg.length > 200) return 'AI 改写失败：' + msg.slice(0, 200) + '…（详见控制台）';
+  return 'AI 改写失败：' + msg;
+}
+
+// ---------- 文件 IO ----------
+function readFile(file) {
+  state.filename = file.name || 'untitled.html';
+  const reader = new FileReader();
+  reader.onload = () => loadHtml(reader.result, { label: '初始版本' });
+  reader.onerror = () => toast('读取文件失败', 'error');
+  reader.readAsText(file);
+}
+
+function exportHtml() {
+  if (!state.history.length) { toast('还没有内容可导出', 'error'); return; }
+  const html = getCurrentHtml();
+  // 移除工具标记
+  const cleaned = html.replace(new RegExp(` ${LOCK_ATTR}="[^"]*"`, 'g'), '');
+  const blob = new Blob([cleaned], { type: 'text/html;charset=utf-8' });
+  const a = document.createElement('a');
+  const base = state.filename.replace(/\.html?$/i, '');
+  a.href = URL.createObjectURL(blob);
+  a.download = `${base}-edited-${stamp()}.html`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+  toast('已导出 ' + a.download, 'success');
+}
+
+function stamp() {
+  const d = new Date();
+  const p = n => n.toString().padStart(2, '0');
+  return d.getFullYear() + p(d.getMonth() + 1) + p(d.getDate()) + '-' + p(d.getHours()) + p(d.getMinutes()) + p(d.getSeconds());
+}
+
+// ---------- 拖入 ----------
+function bindDrop() {
+  ['dragover','dragenter'].forEach(ev => stageEl.addEventListener(ev, e => {
+    e.preventDefault();
+    if (emptyEl.style.display !== 'none') emptyEl.classList.add('dragover');
+  }));
+  ['dragleave','drop'].forEach(ev => stageEl.addEventListener(ev, e => {
+    e.preventDefault();
+    emptyEl.classList.remove('dragover');
+  }));
+  stageEl.addEventListener('drop', e => {
+    const file = e.dataTransfer?.files?.[0];
+    if (file && /\.html?$/i.test(file.name)) readFile(file);
+    else toast('请拖入 .html 文件', 'error');
+  });
+}
+
+// ---------- 设置 ----------
+function openSettings() {
+  const c = getCfg();
+  $('#cfgBase').value = c.base || '';
+  $('#cfgKey').value = c.key || '';
+  $('#cfgModel').value = c.model || '';
+  $('#cfgHeaders').value = c.headers || '';
+  $('#settingsModal').classList.add('show');
+}
+function closeSettings() { $('#settingsModal').classList.remove('show'); }
+function saveSettings() {
+  saveCfg({
+    base: $('#cfgBase').value.trim(),
+    key: $('#cfgKey').value.trim(),
+    model: $('#cfgModel').value.trim(),
+    headers: $('#cfgHeaders').value.trim()
+  });
+  toast('设置已保存', 'success');
+  closeSettings();
+  updateStatus();
+}
+async function testConn() {
+  try {
+    startAI('测试连接中...');
+    const out = await callLLM([{ role: 'user', content: 'reply with the single word: ok' }], state.aiAbort?.signal);
+    toast('连接 OK：' + out.slice(0, 40), 'success');
+  } catch (e) {
+    if (!isAbortError(e)) toast('连接失败：' + e.message, 'error');
+  } finally {
+    endAI();
+  }
+}
+function updateStatus() {
+  const c = getCfg();
+  $('#statusText').textContent = (!c.base || !c.key || !c.model) ? '⚠ 未配置 LLM' : `✓ ${c.model}`;
+}
+
+// ---------- 粘贴 ----------
+function openPaste() {
+  $('#pasteArea').value = '';
+  $('#pasteModal').classList.add('show');
+  setTimeout(() => $('#pasteArea').focus(), 100);
+}
+function closePaste() { $('#pasteModal').classList.remove('show'); }
+function applyPaste() {
+  const html = $('#pasteArea').value.trim();
+  if (!html) { toast('粘贴内容为空', 'error'); return; }
+  state.filename = 'pasted.html';
+  loadHtml(html, { label: '粘贴的内容' });
+  closePaste();
+}
+
+// ---------- 样例 ----------
+const SAMPLE = `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><title>样例汇报</title>
+<style>
+  body{margin:0;font-family:-apple-system,"PingFang SC",sans-serif;background:#fafaf7;color:#1a1a1a;line-height:1.6}
+  .hero{padding:80px 60px;background:linear-gradient(135deg,#1a3a5c,#2a5985);color:#fff}
+  .hero h1{margin:0;font-size:48px;letter-spacing:-0.02em}
+  .hero p{margin:12px 0 0;font-size:18px;opacity:0.85}
+  section{padding:60px;max-width:1100px;margin:0 auto}
+  h2{font-size:28px;margin:0 0 20px;letter-spacing:-0.01em}
+  .kpi{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin:24px 0}
+  .kpi-card{padding:24px;background:#fff;border:1px solid #e5e5e0;border-radius:8px}
+  .kpi-num{font-size:32px;font-weight:700;color:#1a3a5c}
+  .kpi-label{font-size:13px;color:#666;margin-top:4px}
+  .two-col{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:24px}
+  .col-card{padding:24px;background:#fff;border:1px solid #e5e5e0;border-radius:8px}
+  .col-card h3{margin:0 0 8px;font-size:18px}
+  .col-card p{margin:0;color:#555;font-size:14px}
+</style></head><body>
+<div class="hero"><h1>2026 上半年汇报</h1><p>增长、效率、组织 · 一次性给你全貌</p></div>
+<section>
+  <h2>关键指标</h2>
+  <div class="kpi">
+    <div class="kpi-card"><div class="kpi-num">+38%</div><div class="kpi-label">营收同比</div></div>
+    <div class="kpi-card"><div class="kpi-num">214</div><div class="kpi-label">新签客户</div></div>
+    <div class="kpi-card"><div class="kpi-num">92.4%</div><div class="kpi-label">续约率</div></div>
+    <div class="kpi-card"><div class="kpi-num">7.2</div><div class="kpi-label">NPS</div></div>
+  </div>
+  <h2 style="margin-top:48px">两个核心动作</h2>
+  <div class="two-col">
+    <div class="col-card"><h3>客户成功体系升级</h3><p>从被动响应到主动陪跑，建立客户健康度模型，季度复盘机制全面落地。</p></div>
+    <div class="col-card"><h3>组织效率改造</h3><p>重新梳理 8 条核心业务流程，消除 32 个冗余审批节点，平均交付周期缩短 41%。</p></div>
+  </div>
+</section>
+</body></html>`;
+
+function loadSample() {
+  state.filename = 'sample.html';
+  loadHtml(SAMPLE, { label: '样例初始版本' });
+}
+
+// ---------- 布局：拖拽 / 折叠 / 持久化 ----------
+function loadLayout() {
+  try { return JSON.parse(localStorage.getItem(LAYOUT_KEY) || '{}'); } catch { return {}; }
+}
+function saveLayout(patch) {
+  const cur = loadLayout();
+  const next = Object.assign(cur, patch);
+  localStorage.setItem(LAYOUT_KEY, JSON.stringify(next));
+}
+function clampWidth(id, px) {
+  const lim = LAYOUT_LIMITS[id];
+  if (!lim) return px;
+  return Math.max(lim.min, Math.min(lim.max, px));
+}
+function applyColWidth(id, px) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const w = clampWidth(id, px);
+  el.style.width = w + 'px';
+  saveLayout({ [id]: w });
+}
+function setCollapsed(id, collapsed) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.classList.toggle('collapsed', !!collapsed);
+  saveLayout({ [id + '_collapsed']: !!collapsed });
+  // 折叠态下隐藏对应的 resizer
+  const resizer = id === 'outlineCol' ? document.getElementById('resizerLeft')
+                                       : document.getElementById('resizerRight');
+  if (resizer) resizer.style.display = collapsed ? 'none' : '';
+  // 更新折叠按钮箭头方向
+  const btn = document.querySelector(`.collapse-btn[data-target="${id}"]`);
+  if (btn) btn.textContent = collapsed ? (id === 'outlineCol' ? '›' : '‹') : (id === 'outlineCol' ? '‹' : '›');
+}
+function toggleCollapsed(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  setCollapsed(id, !el.classList.contains('collapsed'));
+}
+function bindResizer(resizerId, targetId, side) {
+  const handle = document.getElementById(resizerId);
+  const target = document.getElementById(targetId);
+  if (!handle || !target) return;
+  let dragging = false, startX = 0, startW = 0;
+
+  handle.addEventListener('mousedown', e => {
+    if (target.classList.contains('collapsed')) return;
+    dragging = true;
+    startX = e.clientX;
+    startW = target.getBoundingClientRect().width;
+    handle.classList.add('active');
+    target.classList.add('dragging');
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+    e.preventDefault();
+  });
+  window.addEventListener('mousemove', e => {
+    if (!dragging) return;
+    const dx = e.clientX - startX;
+    const next = side === 'left' ? startW + dx : startW - dx;
+    applyColWidth(targetId, next);
+  });
+  window.addEventListener('mouseup', () => {
+    if (!dragging) return;
+    dragging = false;
+    handle.classList.remove('active');
+    target.classList.remove('dragging');
+    document.body.style.cursor = '';
+    document.body.style.userSelect = '';
+  });
+  // 双击重置
+  handle.addEventListener('dblclick', () => {
+    if (target.classList.contains('collapsed')) return;
+    applyColWidth(targetId, LAYOUT_LIMITS[targetId].def);
+  });
+}
+function restoreLayout() {
+  const saved = loadLayout();
+  ['outlineCol', 'sideCol'].forEach(id => {
+    const w = saved[id];
+    if (typeof w === 'number') {
+      const el = document.getElementById(id);
+      if (el) el.style.width = clampWidth(id, w) + 'px';
+    }
+    setCollapsed(id, !!saved[id + '_collapsed']);
+  });
+}
+function bindCollapseButtons() {
+  document.querySelectorAll('.collapse-btn').forEach(btn => {
+    btn.addEventListener('click', () => toggleCollapsed(btn.dataset.target));
+  });
+  document.querySelectorAll('.collapse-strip').forEach(strip => {
+    strip.addEventListener('click', () => toggleCollapsed(strip.dataset.target));
+  });
+}
+
+// ---------- 主题：浅色 / 深色 / 跟随系统 ----------
+function loadTheme() {
+  const v = localStorage.getItem(THEME_KEY);
+  return THEME_ORDER.includes(v) ? v : 'system';
+}
+function saveTheme(v) {
+  localStorage.setItem(THEME_KEY, v);
+}
+function resolvedTheme(mode) {
+  if (mode !== 'system') return mode;
+  return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+}
+function applyTheme(mode) {
+  const resolved = resolvedTheme(mode);
+  document.documentElement.setAttribute('data-theme', resolved);
+  saveTheme(mode);
+  // 更新按钮显示
+  const meta = THEME_META[mode] || THEME_META.system;
+  const iconEl = document.getElementById('btnThemeIcon');
+  const textEl = document.getElementById('btnThemeText');
+  const btnEl  = document.getElementById('btnTheme');
+  if (iconEl) iconEl.textContent = meta.icon;
+  if (textEl) textEl.textContent = meta.text;
+  if (btnEl)  btnEl.setAttribute('title', `当前：${meta.label}（点击切换）`);
+}
+function cycleTheme() {
+  const cur = loadTheme();
+  const next = THEME_ORDER[(THEME_ORDER.indexOf(cur) + 1) % THEME_ORDER.length];
+  applyTheme(next);
+  toast(`已切到「${THEME_META[next].label}」`, 'info');
+}
+function bindTheme() {
+  applyTheme(loadTheme());
+  const btn = document.getElementById('btnTheme');
+  if (btn) btn.addEventListener('click', cycleTheme);
+  // 跟随系统模式时，监听系统切换
+  if (window.matchMedia) {
+    const mq = window.matchMedia('(prefers-color-scheme: dark)');
+    const handler = () => { if (loadTheme() === 'system') applyTheme('system'); };
+    if (mq.addEventListener) mq.addEventListener('change', handler);
+    else if (mq.addListener) mq.addListener(handler);
+  }
+}
+
+// ---------- 绑定 ----------
+document.addEventListener('DOMContentLoaded', () => {
+  bindTheme();
+  bindDrop();
+  updateStatus();
+  checkDraftOnStart();
+
+  // 布局：先恢复，再绑定拖拽和折叠
+  restoreLayout();
+  bindResizer('resizerLeft', 'outlineCol', 'left');
+  bindResizer('resizerRight', 'sideCol', 'right');
+  bindCollapseButtons();
+
+  $('#btnOpen').addEventListener('click', () => $('#fileInput').click());
+  $('#btnOpenEmpty').addEventListener('click', () => $('#fileInput').click());
+  $('#btnPaste').addEventListener('click', openPaste);
+  $('#btnPasteEmpty').addEventListener('click', openPaste);
+  $('#btnSampleEmpty').addEventListener('click', loadSample);
+  $('#btnExport').addEventListener('click', exportHtml);
+  $('#btnUndo').addEventListener('click', undo);
+  $('#btnRedo').addEventListener('click', redo);
+  $('#btnSettings').addEventListener('click', openSettings);
+  $('#btnCfgCancel').addEventListener('click', closeSettings);
+  $('#btnCfgSave').addEventListener('click', saveSettings);
+  $('#btnTestConn').addEventListener('click', testConn);
+  $('#btnPasteCancel').addEventListener('click', closePaste);
+  $('#btnPasteOk').addEventListener('click', applyPaste);
+  $('#btnApply').addEventListener('click', applyAIRewrite);
+  $('#btnAbort').addEventListener('click', abortAI);
+
+  $('#fileInput').addEventListener('change', e => {
+    const f = e.target.files?.[0];
+    if (f) readFile(f);
+    e.target.value = '';
+  });
+
+  $('#promptInput').addEventListener('keydown', e => {
+    if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+      e.preventDefault();
+      applyAIRewrite();
+    }
+  });
+
+  document.querySelectorAll('.prompt-tag').forEach(t => {
+    t.addEventListener('click', () => {
+      $('#promptInput').value = t.dataset.t;
+      $('#promptInput').focus();
+    });
+  });
+
+  document.addEventListener('keydown', e => {
+    if ((e.metaKey || e.ctrlKey) && e.key === 'z' && !e.shiftKey) { e.preventDefault(); undo(); }
+    else if ((e.metaKey || e.ctrlKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) { e.preventDefault(); redo(); }
+    else if (e.key === 'Escape' && state.aiBusy) { e.preventDefault(); abortAI(); }
+    else if ((e.metaKey || e.ctrlKey) && (e.key === 'b' || e.key === 'B')) { e.preventDefault(); toggleCollapsed('outlineCol'); }
+    else if ((e.metaKey || e.ctrlKey) && e.key === '\\') { e.preventDefault(); toggleCollapsed('sideCol'); }
+  });
+
+  document.querySelectorAll('.modal-mask').forEach(m => {
+    m.addEventListener('click', e => { if (e.target === m) m.classList.remove('show'); });
+  });
+});
+</script>
+</body>
+</html>
